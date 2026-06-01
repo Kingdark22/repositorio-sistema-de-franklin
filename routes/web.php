@@ -24,7 +24,26 @@ Route::get('/login', function (\Illuminate\Http\Request $request) {
 })->name('login');
 
 Route::middleware('auth')->group(function () {
-    Route::view('/acceso-por-rol', 'acceso_rol.index')->name('acceso-rol.index');
+    Route::get('/acceso-por-rol', function () {
+        return view('acceso_rol.index', (function () {
+            $service = app(App\Services\UserRoleService::class);
+            $user = auth()->user();
+            return [
+                'roleButtons' => $service->moduleRoleButtons($user),
+                'activeRoleLabel' => $service->activeRoleLabel($user),
+            ];
+        })());
+    })->name('acceso-rol.index');
+
+    Route::get('/simular-rol/{moduleKey}', function (string $moduleKey) {
+        $service = app(App\Services\UserRoleService::class);
+        $user = auth()->user();
+        if ($service->setActiveRoleByModuleKey($user, $moduleKey)) {
+            app(App\Support\NavigationMenu::class)->flags($user);
+        }
+        return redirect()->route('dashboard');
+    })->name('simular-rol');
+
     Route::redirect('/sesion/rol', '/acceso-por-rol');
 });
 

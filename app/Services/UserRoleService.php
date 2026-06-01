@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Helpers\DbHelper;
 use App\Models\User;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Session;
 
@@ -13,6 +14,8 @@ class UserRoleService
     protected ?array $cachedAvailableRoles = null;
 
     protected ?string $cachedCedula = null;
+
+    protected const CACHE_TTL = 300;
 
     public function sessionKey(): string
     {
@@ -41,6 +44,11 @@ class UserRoleService
         $this->cachedCedula = null;
     }
 
+    protected function clearPersistentCache(string $cedula): void
+    {
+        Cache::forget('available_roles_' . $cedula);
+    }
+
     /**
      * Roles detectados en la BD externa (solo referencia administrativa).
      *
@@ -52,6 +60,14 @@ class UserRoleService
 
         if ($this->cachedAvailableRoles !== null && $this->cachedCedula === $cedula) {
             return $this->cachedAvailableRoles;
+        }
+
+        $cacheKey = 'available_roles_' . $cedula;
+        $cached = Cache::get($cacheKey);
+        if ($cached !== null) {
+            $this->cachedAvailableRoles = $cached;
+            $this->cachedCedula = $cedula;
+            return $cached;
         }
 
         $conn = \App\Helpers\DualDatabase::academicConnection();
@@ -83,6 +99,8 @@ class UserRoleService
         if (app(IntranetProfessorService::class)->esProfesorProyectoVigente($cedula)) {
             $roles['profesor proyecto'] = $this->label('profesor proyecto');
         }
+
+        Cache::put($cacheKey, $roles, now()->addSeconds(self::CACHE_TTL));
 
         $this->cachedAvailableRoles = $roles;
         $this->cachedCedula = $cedula;
@@ -147,6 +165,7 @@ class UserRoleService
 
         Session::put($this->sessionKey(), $role);
         $this->clearCache();
+        $this->clearPersistentCache($user->usu_cedula);
 
         // Exportar contexto y rol al seleccionar
         $mirror = app(IntranetSimulationMirrorService::class);
@@ -162,6 +181,12 @@ class UserRoleService
     {
         Session::forget($this->sessionKey());
         $this->clearCache();
+    }
+
+    public function clearUserCache(string $cedula): void
+    {
+        $this->clearCache();
+        $this->clearPersistentCache($cedula);
     }
 
     public function bootstrapSessionRole(User $user): void

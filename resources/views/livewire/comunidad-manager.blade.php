@@ -192,10 +192,16 @@
                 <tr>
                     <td><b>Año / trayecto ref.:</b></td>
                     <td colspan="3">
-                        <input wire:model="anio" type="text" style="width: 40%;"
-                            placeholder="Ej. Año IV (opcional)">
+                        <select wire:model="anio" style="width: 40%; padding: 4px; border-radius: 4px; border: 1px solid #ccc;">
+                            <option value="">-- Seleccione (opcional) --</option>
+                            @foreach ($trayectos as $t)
+                                <option value="{{ $t->tra_nombre }}">
+                                    {{ in_array($t->tra_nombre, ['I', 'II', 'III', 'IV', 'V']) ? 'Trayecto ' . $t->tra_nombre : $t->tra_nombre }}
+                                </option>
+                            @endforeach
+                        </select>
                         @error('anio')
-                            <span style="color:red;font-size:10px;">{{ $message }}</span>
+                            <br><span style="color:red;font-size:10px;">{{ $message }}</span>
                         @enderror
                     </td>
                 </tr>

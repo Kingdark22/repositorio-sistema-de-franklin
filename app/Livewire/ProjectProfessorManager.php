@@ -99,14 +99,17 @@ class ProjectProfessorManager extends Component
 
     public function render(IntranetProfessorService $professorService)
     {
-        return view('livewire.project-professor-manager', $professorService->datosVistaGestion([
+        return view('livewire.project-professor-manager', array_merge(
+            $professorService->datosVistaGestion([
                 'search' => $this->search,
                 'lapso' => $this->lapsoFilter ? (int) $this->lapsoFilter : null,
                 'programa' => $this->programaFilter ? (int) $this->programaFilter : null,
                 'trayecto' => $this->trayectoFilter ? (int) $this->trayectoFilter : null,
                 'seccion' => $this->seccionFilter ? (int) $this->seccionFilter : null,
                 'page' => $this->getPage(),
-            ]));
+            ]),
+            ['professorService' => $professorService]
+        ));
     }
 
     /**

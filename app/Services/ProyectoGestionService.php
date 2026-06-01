@@ -16,6 +16,7 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\LengthAwarePaginator as PaginatorInstance;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
@@ -444,7 +445,9 @@ class ProyectoGestionService
 
     public function comunidadesOrdenadas(): Collection
     {
-        return Comunidad::orderBy('nombre')->get();
+        return Cache::remember('gestion_comunidades_ordenadas', now()->addMinutes(10), fn() =>
+            Comunidad::orderBy('nombre')->get()
+        );
     }
 
     /**
@@ -452,13 +455,14 @@ class ProyectoGestionService
      */
     protected function catalogos(): array
     {
+        $ttl = now()->addMinutes(10);
         return [
-            'lineas' => app(ModuloRepositorioService::class)->lineasInvestigacionActivas(),
-            'metodologias' => MetodologiaInvestigacion::where('estado_logico', true)->get(),
-            'tipos_publicacion' => TipoPublicacion::where('estado_logico', true)->get(),
-            'tipos_investigacion' => TipoInvestigacion::where('estado_logico', true)->get(),
-            'lapsos' => LapsoAcademico::activos()->orderByDesc('lap_codigo')->get(),
-            'coordinaciones' => app(ModuloRepositorioService::class)->coordinacionesActivas(),
+            'lineas' => Cache::remember('gestion_cat_lineas', $ttl, fn() => app(ModuloRepositorioService::class)->lineasInvestigacionActivas()),
+            'metodologias' => Cache::remember('gestion_cat_metodologias', $ttl, fn() => MetodologiaInvestigacion::where('estado_logico', true)->get()),
+            'tipos_publicacion' => Cache::remember('gestion_cat_tipos_publicacion', $ttl, fn() => TipoPublicacion::where('estado_logico', true)->get()),
+            'tipos_investigacion' => Cache::remember('gestion_cat_tipos_investigacion', $ttl, fn() => TipoInvestigacion::where('estado_logico', true)->get()),
+            'lapsos' => Cache::remember('gestion_cat_lapsos', $ttl, fn() => LapsoAcademico::activos()->orderByDesc('lap_codigo')->get()),
+            'coordinaciones' => Cache::remember('gestion_cat_coordinaciones', $ttl, fn() => app(ModuloRepositorioService::class)->coordinacionesActivas()),
         ];
     }
 

@@ -28,10 +28,18 @@ class Proyecto extends RepositorioModel
         'equipo_ref',
     ];
 
+    protected static array $resumenEquipoCache = [];
+
     public function getEquipoResumenAttribute(): string
     {
-        return app(\App\Services\IntranetEquipoSeccionService::class)
+        $key = $this->equipo_ref ?? '__null__';
+        if (isset(self::$resumenEquipoCache[$key])) {
+            return self::$resumenEquipoCache[$key];
+        }
+        $resumen = app(\App\Services\IntranetEquipoSeccionService::class)
             ->resumenEquipo($this->equipo_ref);
+        self::$resumenEquipoCache[$key] = $resumen;
+        return $resumen;
     }
 
     protected $casts = [

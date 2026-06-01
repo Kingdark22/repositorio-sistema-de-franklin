@@ -97,15 +97,17 @@
                                         style="color: #0000EE; font-size: 10px;">[Ficha técnica]</a>
                                 </td>
                                 <td align="center" style="padding: 5px;">
-                                    <button type="button" wire:click="approve({{ $p->id }})"
-                                        onclick="return confirm('¿Aprueba este proyecto?')"
-                                        style="border: 1px solid #008000; border-radius: 4px; padding: 2px 10px; font-weight: bold; background-color: #d4edda; color: #155724; cursor: pointer; display: block; width: 90%; margin: 0 auto 5px auto; font-size: 10px;">
-                                        Aprobar
-                                    </button>
-                                    <button type="button" wire:click="openReject({{ $p->id }})"
-                                        style="border: 1px solid #FF0000; border-radius: 4px; padding: 2px 10px; font-weight: bold; background-color: #f8d7da; color: #721c24; cursor: pointer; display: block; width: 90%; margin: 0 auto; font-size: 10px;">
-                                        Rechazar
-                                    </button>
+                                    <div class="pgm-actions">
+                                        <button type="button" wire:click="approve({{ $p->id }})"
+                                            onclick="return confirm('¿Aprueba este proyecto?')"
+                                            class="pgm-btn-action pgm-btn-action--approve">
+                                            Aprobar
+                                        </button>
+                                        <button type="button" wire:click="openReject({{ $p->id }})"
+                                            class="pgm-btn-action pgm-btn-action--reject">
+                                            Rechazar
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                         @endforeach
@@ -209,23 +211,37 @@
                                         <span style="color: #FF0000; font-weight: bold;">Inactivo</span>
                                     @endif
                                 </td>
-                                <td align="center" style="padding: 5px; font-size: 10px;">
-                                    @if (!empty($canValidate) && $p->estado_validacion === 'pendiente')
-                                        <button type="button" wire:click="approve({{ $p->id }})"
-                                            onclick="return confirm('¿Aprueba este proyecto?')"
-                                            style="font-size: 10px; margin-bottom: 3px;">[Aprobar]</button><br>
-                                        <a href="#" wire:click.prevent="openReject({{ $p->id }})"
-                                            style="color: #FF0000;">[Rechazar]</a><br>
-                                        <a href="#" wire:click.prevent="openDetails({{ $p->id }})"
-                                            style="color: #0000EE;">[Ficha]</a><br>
-                                    @endif
-                                    <a href="#" wire:click.prevent="edit({{ $p->id }})"
-                                        style="color: #0000EE;">[Editar]</a><br>
-                                    <a href="#" wire:click.prevent="toggleStatus({{ $p->id }})"
-                                        style="color: #0000EE;">[{{ $p->estado_logico ? 'Inhabilitar' : 'Habilitar' }}]</a><br>
-                                    <a href="#" wire:click.prevent="delete({{ $p->id }})"
-                                        wire:confirm="¿Eliminar este proyecto permanentemente?"
-                                        style="color: #FF0000;">[Eliminar]</a>
+                                <td align="center" style="padding: 5px;">
+                                    <div class="pgm-actions">
+                                        @if (!empty($canValidate) && $p->estado_validacion === 'pendiente')
+                                            <button type="button" wire:click="approve({{ $p->id }})"
+                                                onclick="return confirm('¿Aprueba este proyecto?')"
+                                                class="pgm-btn-action pgm-btn-action--approve">
+                                                Aprobar
+                                            </button>
+                                            <button type="button" wire:click="openReject({{ $p->id }})"
+                                                class="pgm-btn-action pgm-btn-action--reject">
+                                                Rechazar
+                                            </button>
+                                            <button type="button" wire:click="openDetails({{ $p->id }})"
+                                                class="pgm-btn-action pgm-btn-action--details">
+                                                Ficha
+                                            </button>
+                                        @endif
+                                        <button type="button" wire:click="edit({{ $p->id }})"
+                                            class="pgm-btn-action pgm-btn-action--edit">
+                                            Editar
+                                        </button>
+                                        <button type="button" wire:click="toggleStatus({{ $p->id }})"
+                                            class="pgm-btn-action pgm-btn-action--toggle">
+                                            {{ $p->estado_logico ? 'Inhabilitar' : 'Habilitar' }}
+                                        </button>
+                                        <button type="button" wire:click="delete({{ $p->id }})"
+                                            wire:confirm="¿Eliminar este proyecto permanentemente?"
+                                            class="pgm-btn-action pgm-btn-action--delete">
+                                            Eliminar
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                         @endforeach
@@ -301,13 +317,17 @@
             <div style="text-align: center; margin-top: 20px; border-top: 1px solid #CCC; padding-top: 15px;">
                 @if ($selectedProject->estado_validacion === 'pendiente')
                     <button type="button" wire:click="approveFromDetails({{ $selectedProject->id }})"
-                        onclick="return confirm('¿Aprueba este proyecto?')" class="boton"
-                        style="background-color: #d4edda; color: #155724; font-weight: bold; margin-right: 10px;">Aprobar</button>
-                    <button type="button" wire:click="rejectFromDetails({{ $selectedProject->id }})" class="boton"
-                        style="background-color: #f8d7da; color: #721c24; font-weight: bold; margin-right: 10px;">Rechazar</button>
+                        onclick="return confirm('¿Aprueba este proyecto?')"
+                        class="pgm-btn-action pgm-btn-action--approve">
+                        Aprobar
+                    </button>
+                    <button type="button" wire:click="rejectFromDetails({{ $selectedProject->id }})"
+                        class="pgm-btn-action pgm-btn-action--reject">
+                        Rechazar
+                    </button>
                 @endif
-                <button type="button" wire:click="irAListado('{{ $listTab }}')" class="boton">Regresar al
-                    listado</button>
+                <button type="button" wire:click="irAListado('{{ $listTab }}')"
+                    class="pgm-btn-action pgm-btn-action--edit">Regresar al listado</button>
             </div>
         </fieldset>
     @elseif($viewMode === 'form')

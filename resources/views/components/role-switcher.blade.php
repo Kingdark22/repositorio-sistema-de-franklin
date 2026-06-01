@@ -1,43 +1,4 @@
-<?php
-
-use App\Services\UserRoleService;
-use Livewire\Component;
-
-new class extends Component
-{
-    /** @var list<array{key: string, label: string, slug: string, enabled: bool, active: bool}> */
-    public array $roleButtons = [];
-
-    public ?string $activeRoleLabel = null;
-
-    public ?string $loadingKey = null;
-
-    public function mount(UserRoleService $roleService): void
-    {
-        $this->refreshState($roleService);
-    }
-
-    protected function refreshState(UserRoleService $roleService): void
-    {
-        $user = auth()->user();
-        $this->roleButtons = $roleService->moduleRoleButtons($user);
-        $this->activeRoleLabel = $roleService->activeRoleLabel($user);
-    }
-
-    public function selectRole(string $moduleKey, UserRoleService $roleService)
-    {
-        $user = auth()->user();
-
-        if (! $roleService->setActiveRoleByModuleKey($user, $moduleKey)) {
-            session()->flash('error', 'No se pudo aplicar ese rol.');
-            return;
-        }
-        
-        // Redireccionar instantáneamente
-        return redirect()->route('dashboard');
-    }
-};
-?>
+@props(['roleButtons' => [], 'activeRoleLabel' => null])
 
 <style>
     .rol-ventana {
@@ -69,7 +30,9 @@ new class extends Component
         margin-top: 8px;
     }
     .rol-boton {
-        display: block;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         width: 100%;
         min-height: 72px;
         padding: 12px 10px;
@@ -96,9 +59,10 @@ new class extends Component
     .rol-boton--activo::after {
         content: ' ✓';
     }
-    .rol-boton--cargando {
-        opacity: 0.7;
-        cursor: wait;
+    .rol-boton--disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+        pointer-events: none;
     }
     .rol-activo-badge {
         text-align: center;
@@ -143,15 +107,17 @@ new class extends Component
 
             <div class="rol-botones">
                 @foreach ($roleButtons as $btn)
-                    <button
-                        type="button"
-                        class="rol-boton {{ $btn['active'] ? 'rol-boton--activo' : '' }}"
-                        wire:click="selectRole({{ json_encode($btn['key']) }})"
-                        @if(! $btn['enabled']) disabled @endif
-                        title="{{ $btn['enabled'] ? 'Acceder como '.$btn['label'] : 'Rol no disponible' }}"
+                    <a href="{{ route('simular-rol', ['moduleKey' => $btn['key']]) }}"
+                        class="rol-boton {{ $btn['active'] ? 'rol-boton--activo' : '' }} {{ !$btn['enabled'] ? 'rol-boton--disabled' : '' }}"
+                        @if(! $btn['enabled'])
+                            onclick="return false;"
+                            title="Rol no disponible"
+                        @else
+                            title="Acceder como {{ $btn['label'] }}"
+                        @endif
                     >
                         {{ $btn['label'] }}
-                    </button>
+                    </a>
                 @endforeach
             </div>
         </div>

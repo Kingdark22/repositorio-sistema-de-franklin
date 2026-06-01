@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Models\Comunidad;
+use App\Models\Trayecto;
 use App\Services\IntranetProfessorService;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -177,10 +178,28 @@ class ComunidadManager extends Component
             ->orderByDesc((new Comunidad())->getKeyName())
             ->paginate(10);
 
+        try {
+            $trayectos = Trayecto::on(\App\Helpers\DbHelper::connection())
+                ->whereNotNull('tra_nombre')
+                ->orderBy('tra_nombre')
+                ->get();
+        } catch (\Throwable) {
+            $trayectos = collect();
+        }
+        if ($trayectos->isEmpty()) {
+            $trayectos = collect([
+                (object) ['tra_nombre' => 'I'],
+                (object) ['tra_nombre' => 'II'],
+                (object) ['tra_nombre' => 'III'],
+                (object) ['tra_nombre' => 'IV'],
+            ]);
+        }
+
         return [
             'comunidades' => $comunidades,
             'puedeGestionar' => $this->puedeGestionar(),
             'lapsoVigente' => app(IntranetProfessorService::class)->lapsosActivos()->first(),
+            'trayectos' => $trayectos,
         ];
     }
 

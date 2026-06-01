@@ -8,11 +8,14 @@ use App\Models\LapsoAcademico;
 use Illuminate\Contracts\Pagination\Paginator;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 class IntranetProfessorService
 {
+    protected const CACHE_TTL = 300;
+
     public function academicConnection(): string
     {
         return DbHelper::connection();
@@ -237,6 +240,8 @@ class IntranetProfessorService
                 ->insert($payload);
         }
 
+        Cache::forget('profesor_configuraciones_indexadas');
+
         return true;
     }
 
@@ -258,6 +263,8 @@ class IntranetProfessorService
             'ppm_habilitado' => false,
             'updated_at' => now(),
         ]);
+
+        Cache::forget('profesor_configuraciones_indexadas');
     }
 
     /**
@@ -271,8 +278,41 @@ class IntranetProfessorService
         int $page = 1,
     ): LengthAwarePaginator {
         try {
-            $query = $this->baseProfesorProyectoQuery($lapCodigo, $filtros)
+            $countQuery = $this->baseProfesorProyectoQuery($lapCodigo, $filtros)
                 ->leftJoin('persona as p', 'p.per_cedula', '=', 'sud.sud_ced_docente')
+                ->select('sud.sud_ced_docente')
+                ->groupBy('sud.sud_ced_docente');
+
+            if ($search !== '') {
+                $term = '%' . $search . '%';
+                $countQuery->where(function($q) use ($term) {
+                    $q->where('sud.sud_ced_docente', 'LIKE', $term)
+                      ->orWhere('p.per_nombres', 'LIKE', $term)
+                      ->orWhere('p.per_apellidos', 'LIKE', $term)
+                      ->orWhere('pro.pro_siglas', 'LIKE', $term)
+                      ->orWhere('pro.pro_nombre', 'LIKE', $term)
+                      ->orWhere('tra.tra_nombre', 'LIKE', $term)
+                      ->orWhere('sec.sec_nombre', 'LIKE', $term)
+                      ->orWhere('ucu.ucu_siglas', 'LIKE', $term)
+                      ->orWhere('ucu.ucu_nombre', 'LIKE', $term);
+                });
+            }
+
+            $total = $countQuery->get()->count();
+
+            if ($total === 0) {
+                return new LengthAwarePaginator([], 0, $perPage, $page, ['path' => request()->url(), 'query' => request()->query()]);
+            }
+
+            $cedulasPage = $countQuery
+                ->orderBy('sud.sud_ced_docente')
+                ->skip(($page - 1) * $perPage)
+                ->take($perPage)
+                ->pluck('sud.sud_ced_docente');
+
+            $rows = $this->baseProfesorProyectoQuery($lapCodigo, $filtros)
+                ->leftJoin('persona as p', 'p.per_cedula', '=', 'sud.sud_ced_docente')
+                ->whereIn('sud.sud_ced_docente', $cedulasPage)
                 ->select([
                     'sud.sud_codigo',
                     'sud.sud_cod_seccion',
@@ -289,32 +329,22 @@ class IntranetProfessorService
                 ->selectRaw('sud.sud_ced_docente as cedula')
                 ->selectRaw('p.per_nombres as per_nombres')
                 ->selectRaw('p.per_apellidos as per_apellidos')
+                ->orderBy('sud.sud_ced_docente')
                 ->orderBy('pro.pro_siglas')
                 ->orderBy('tra.tra_nombre')
-                ->orderBy('sec.sec_nombre');
-
-            if ($search !== '') {
-                $term = '%' . $search . '%';
-                $query->where(function($q) use ($term) {
-                    $q->where('sud.sud_ced_docente', 'LIKE', $term)
-                      ->orWhere('p.per_nombres', 'LIKE', $term)
-                      ->orWhere('p.per_apellidos', 'LIKE', $term);
-                });
-            }
-
-            $rows = $query->get();
+                ->orderBy('sec.sec_nombre')
+                ->get();
 
             if (DbHelper::isUsingIntranet()) {
                 app(IntranetSimulationMirrorService::class)->mirrorRows('seccion_unidad_docente', $rows);
             }
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error("Error en paginateDocentes: " . $e->getMessage());
-            return new LengthAwarePaginator([], 0, $perPage, $page);
+            return new LengthAwarePaginator([], 0, $perPage, $page, ['path' => request()->url(), 'query' => request()->query()]);
         }
 
-        $grouped = $this->agruparPorCedula($rows, ''); // Ya filtrado en SQL
-        $total = $grouped->count();
-        $items = $grouped->slice(($page - 1) * $perPage, $perPage)->values();
+        $grouped = $this->agruparPorCedula($rows, '');
+        $items = $grouped->values();
 
         return new LengthAwarePaginator(
             $items,
@@ -391,16 +421,20 @@ class IntranetProfessorService
             return collect();
         }
 
-        try {
-            return $this->baseProfesorProyectoQuery($lapCodigo)
-                ->select(['pro.pro_codigo', 'pro.pro_siglas', 'pro.pro_nombre'])
-                ->whereNotNull('pro.pro_codigo')
-                ->distinct()
-                ->orderBy('pro.pro_siglas')
-                ->get();
-        } catch (\Throwable) {
-            return collect();
-        }
+        $cacheKey = 'programas_en_lapso_' . $lapCodigo . '_' . DbHelper::connection();
+
+        return Cache::remember($cacheKey, now()->addSeconds(self::CACHE_TTL), function () use ($lapCodigo) {
+            try {
+                return $this->baseProfesorProyectoQuery($lapCodigo)
+                    ->select(['pro.pro_codigo', 'pro.pro_siglas', 'pro.pro_nombre'])
+                    ->whereNotNull('pro.pro_codigo')
+                    ->distinct()
+                    ->orderBy('pro.pro_siglas')
+                    ->get();
+            } catch (\Throwable) {
+                return collect();
+            }
+        });
     }
 
     /**
@@ -412,18 +446,22 @@ class IntranetProfessorService
             return collect();
         }
 
-        $filtros = $programaCodigo ? ['programa' => $programaCodigo] : [];
+        $cacheKey = 'trayectos_en_lapso_' . $lapCodigo . '_' . ($programaCodigo ?? '0') . '_' . DbHelper::connection();
 
-        try {
-            return $this->baseProfesorProyectoQuery($lapCodigo, $filtros)
-                ->select(['tra.tra_codigo', 'tra.tra_nombre'])
-                ->whereNotNull('tra.tra_codigo')
-                ->distinct()
-                ->orderBy('tra.tra_nombre')
-                ->get();
-        } catch (\Throwable) {
-            return collect();
-        }
+        return Cache::remember($cacheKey, now()->addSeconds(self::CACHE_TTL), function () use ($lapCodigo, $programaCodigo) {
+            $filtros = $programaCodigo ? ['programa' => $programaCodigo] : [];
+
+            try {
+                return $this->baseProfesorProyectoQuery($lapCodigo, $filtros)
+                    ->select(['tra.tra_codigo', 'tra.tra_nombre'])
+                    ->whereNotNull('tra.tra_codigo')
+                    ->distinct()
+                    ->orderBy('tra.tra_nombre')
+                    ->get();
+            } catch (\Throwable) {
+                return collect();
+            }
+        });
     }
 
     /**
@@ -435,20 +473,24 @@ class IntranetProfessorService
             return collect();
         }
 
-        $filtros = array_filter([
-            'programa' => $programaCodigo,
-            'trayecto' => $trayectoCodigo,
-        ]);
+        $cacheKey = 'secciones_en_lapso_' . $lapCodigo . '_' . ($programaCodigo ?? '0') . '_' . ($trayectoCodigo ?? '0') . '_' . DbHelper::connection();
 
-        try {
-            return $this->baseProfesorProyectoQuery($lapCodigo, $filtros)
-                ->select(['sec.sec_codigo', 'sec.sec_nombre', 'pro.pro_siglas', 'tra.tra_nombre'])
-                ->distinct()
-                ->orderBy('sec.sec_nombre')
-                ->get();
-        } catch (\Throwable) {
-            return collect();
-        }
+        return Cache::remember($cacheKey, now()->addSeconds(self::CACHE_TTL), function () use ($lapCodigo, $programaCodigo, $trayectoCodigo) {
+            $filtros = array_filter([
+                'programa' => $programaCodigo,
+                'trayecto' => $trayectoCodigo,
+            ]);
+
+            try {
+                return $this->baseProfesorProyectoQuery($lapCodigo, $filtros)
+                    ->select(['sec.sec_codigo', 'sec.sec_nombre', 'pro.pro_siglas', 'tra.tra_nombre'])
+                    ->distinct()
+                    ->orderBy('sec.sec_nombre')
+                    ->get();
+            } catch (\Throwable) {
+                return collect();
+            }
+        });
     }
 
     /**
@@ -547,7 +589,7 @@ class IntranetProfessorService
             ->leftJoin('programa as pro_v', 'pro_v.pro_codigo', '=', 'mal_v.mal_cod_programa')
             ->leftJoin('trayecto as tra_v', 'tra_v.tra_codigo', '=', 'mal_v.mal_cod_trayecto')
             ->where("sud_v.sud_ced_docente", "NOT LIKE", '%-%')
-            ->whereRaw('LENGTH(sud_v.sud_ced_docente)) >= 6');
+            ->whereRaw('LENGTH(sud_v.sud_ced_docente) >= 6');
 
         if ($lapCodigo !== null) {
             $sub->where('lap_v.lap_codigo', $lapCodigo);
@@ -678,17 +720,19 @@ class IntranetProfessorService
             return [];
         }
 
-        $index = [];
-        $rows = DB::connection($this->repositorioConnection())
-            ->table('profesor_proyecto_modulo')
-            ->get();
+        return Cache::remember('profesor_configuraciones_indexadas', now()->addSeconds(300), function () {
+            $index = [];
+            $rows = DB::connection($this->repositorioConnection())
+                ->table('profesor_proyecto_modulo')
+                ->get();
 
-        foreach ($rows as $row) {
-            $key = trim($row->ppm_cedula) . ':' . (int) $row->ppm_lap_codigo;
-            $index[$key] = $row;
-        }
+            foreach ($rows as $row) {
+                $key = trim($row->ppm_cedula) . ':' . (int) $row->ppm_lap_codigo;
+                $index[$key] = $row;
+            }
 
-        return $index;
+            return $index;
+        });
     }
 
     public function moduloTableExists(): bool

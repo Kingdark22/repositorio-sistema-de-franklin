@@ -26,6 +26,10 @@ use App\Models\Trayecto;
  */
 class IntranetSimulationMirrorService
 {
+    protected static array $mirroredUserContexts = [];
+
+    protected static array $mirroredCatalogs = [];
+
     public function enabled(): bool
     {
         return (bool) config('intranet_mirror.enabled', true);
@@ -155,6 +159,11 @@ class IntranetSimulationMirrorService
             return 0;
         }
 
+        if (isset(self::$mirroredUserContexts[$cedula])) {
+            return 0;
+        }
+        self::$mirroredUserContexts[$cedula] = true;
+
         $intranet = 'intranet';
         $total = 0;
 
@@ -184,15 +193,18 @@ class IntranetSimulationMirrorService
             $total += $this->mirrorDocenteAssignments($cedula);
         }
 
-        if ($this->simulationHasTable('lapso_academico')) {
+        if (! isset(self::$mirroredCatalogs['lapso_academico']) && $this->simulationHasTable('lapso_academico')) {
+            self::$mirroredCatalogs['lapso_academico'] = true;
             $total += $this->mirrorActiveLapsos();
         }
 
-        if ($this->simulationHasTable('programa')) {
+        if (! isset(self::$mirroredCatalogs['programa']) && $this->simulationHasTable('programa')) {
+            self::$mirroredCatalogs['programa'] = true;
             $total += $this->mirrorAllPrograms();
         }
 
-        if ($this->simulationHasTable('rol')) {
+        if (! isset(self::$mirroredCatalogs['rol']) && $this->simulationHasTable('rol')) {
+            self::$mirroredCatalogs['rol'] = true;
             $total += $this->mirrorTable('rol');
         }
 

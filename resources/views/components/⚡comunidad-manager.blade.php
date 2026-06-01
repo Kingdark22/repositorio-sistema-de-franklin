@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Comunidad;
+use App\Models\Trayecto;
 use App\Services\IntranetProfessorService;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -180,10 +181,28 @@ new class extends Component
             ->orderByDesc('id')
             ->paginate(10);
 
+        try {
+            $trayectos = Trayecto::on(\App\Helpers\DbHelper::connection())
+                ->whereNotNull('tra_nombre')
+                ->orderBy('tra_nombre')
+                ->get();
+        } catch (\Throwable) {
+            $trayectos = collect();
+        }
+        if ($trayectos->isEmpty()) {
+            $trayectos = collect([
+                (object) ['tra_nombre' => 'I'],
+                (object) ['tra_nombre' => 'II'],
+                (object) ['tra_nombre' => 'III'],
+                (object) ['tra_nombre' => 'IV'],
+            ]);
+        }
+
         return [
             'comunidades' => $comunidades,
             'puedeGestionar' => $this->puedeGestionar(),
             'lapsoVigente' => app(IntranetProfessorService::class)->lapsosActivos()->first(),
+            'trayectos' => $trayectos,
         ];
     }
 };
@@ -319,10 +338,17 @@ new class extends Component
                 </td>
             </tr>
             <tr>
-                <td><b>Año / trayecto ref.:</b></td>
+                <td><b>Trayecto ref.:</b></td>
                 <td colspan="3">
-                    <input wire:model="anio" type="text" style="width: 40%;" placeholder="Ej. Año IV (opcional)">
-                    @error('anio') <span style="color:red;font-size:10px;">{{ $message }}</span> @enderror
+                    <select wire:model="anio" style="width: 40%; padding: 4px; border-radius: 4px; border: 1px solid #ccc;">
+                        <option value="">-- Seleccione (opcional) --</option>
+                        @foreach ($trayectos as $t)
+                            <option value="{{ $t->tra_nombre }}">
+                                {{ in_array($t->tra_nombre, ['I', 'II', 'III', 'IV', 'V']) ? 'Trayecto ' . $t->tra_nombre : $t->tra_nombre }}
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('anio') <br><span style="color:red;font-size:10px;">{{ $message }}</span> @enderror
                 </td>
             </tr>
             <tr>

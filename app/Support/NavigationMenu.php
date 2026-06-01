@@ -5,6 +5,7 @@ namespace App\Support;
 use App\Models\User;
 use App\Services\ProyectoGestionService;
 use App\Services\UserRoleService;
+use Illuminate\Support\Facades\Cache;
 
 /**
  * Permisos de menú según rol activo en sesión (sin depender de tablas roles locales).
@@ -12,6 +13,8 @@ use App\Services\UserRoleService;
 class NavigationMenu
 {
     protected array $cache = [];
+
+    protected const CACHE_TTL = 300;
 
     public function __construct(
         protected UserRoleService $roles,
@@ -27,9 +30,16 @@ class NavigationMenu
         }
 
         $cacheKey = $user->usu_cedula . '_' . session($this->roles->sessionKey(), 'none');
-        
+
         if (isset($this->cache[$cacheKey])) {
             return $this->cache[$cacheKey];
+        }
+
+        $sessionKey = 'nav_flags_' . $cacheKey;
+        $cached = Cache::get($sessionKey);
+        if ($cached !== null) {
+            $this->cache[$cacheKey] = $cached;
+            return $cached;
         }
 
         $isAdmin = $user->hasRole('administrador');
@@ -38,7 +48,7 @@ class NavigationMenu
         $isStudent = $user->hasRole('estudiante');
         $studentWithTeam = $isStudent && $user->perteneceAEquipo();
 
-        return $this->cache[$cacheKey] = [
+        $flags = [
             'isAdmin' => $isAdmin,
             'isCoordinator' => $isCoordinator,
             'isTeacher' => $isTeacher,
@@ -52,6 +62,12 @@ class NavigationMenu
             'canManageSystemConfig' => $isAdmin || $isCoordinator,
             'canManageCoordinators' => $isAdmin,
         ];
+
+        Cache::put($sessionKey, $flags, now()->addSeconds(self::CACHE_TTL));
+
+        $this->cache[$cacheKey] = $flags;
+
+        return $flags;
     }
 
     /**

@@ -7,6 +7,7 @@ use App\Models\RepositorioModel;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
 
 /**
@@ -132,23 +133,27 @@ class ModuloRepositorioService
 
     public function coordinacionesActivas(): Collection
     {
-        if (! $this->tablaExiste('coordinaciones')) {
-            return collect();
-        }
+        return Cache::remember('modulo_coordinaciones_activas', now()->addMinutes(10), function () {
+            if (! $this->tablaExiste('coordinaciones')) {
+                return collect();
+            }
 
-        return $this->queryModel(\App\Models\Coordinacion::class)
-            ->get();
+            return $this->queryModel(\App\Models\Coordinacion::class)
+                ->get();
+        });
     }
 
     public function lineasInvestigacionActivas(): Collection
     {
-        if (! $this->tablaExiste('linea_investigacions')) {
-            return collect();
-        }
+        return Cache::remember('modulo_lineas_investigacion_activas', now()->addMinutes(10), function () {
+            if (! $this->tablaExiste('linea_investigacions')) {
+                return collect();
+            }
 
-        return $this->queryModel(\App\Models\LineaInvestigacion::class)
-            ->where('activo', true)
-            ->orderBy('nombre_investigacion')
-            ->get();
+            return $this->queryModel(\App\Models\LineaInvestigacion::class)
+                ->where('activo', true)
+                ->orderBy('nombre_investigacion')
+                ->get();
+        });
     }
 }

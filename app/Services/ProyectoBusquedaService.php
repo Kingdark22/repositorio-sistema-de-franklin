@@ -12,6 +12,7 @@ use App\Models\TipoPublicacion;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator as PaginatorInstance;
+use Illuminate\Support\Facades\Cache;
 class ProyectoBusquedaService
 {
     public function __construct(
@@ -40,8 +41,12 @@ class ProyectoBusquedaService
         $programaCodigo = $filtros['programa'] ?? null;
         $trayectoCodigo = $filtros['trayecto'] ?? null;
 
-        $lapsos = LapsoAcademico::activos()->orderByDesc('lap_codigo')->get();
+        $lapsos = Cache::remember('busqueda_lapsos_activos', now()->addMinutes(10), fn() =>
+            LapsoAcademico::activos()->orderByDesc('lap_codigo')->get()
+        );
         $intranetDisponible = $this->intranet->lapsosActivos()->isNotEmpty();
+
+        $catTtl = now()->addMinutes(10);
 
         return [
             'proyectos' => $this->buscar($filtros, $page),
@@ -56,11 +61,11 @@ class ProyectoBusquedaService
             'secciones' => $lapCodigo && $intranetDisponible
                 ? $this->intranet->seccionesEnLapso($lapCodigo, $programaCodigo, $trayectoCodigo)
                 : collect(),
-            'comunidades' => Comunidad::orderBy('nombre')->get(),
+            'comunidades' => Cache::remember('busqueda_comunidades', $catTtl, fn() => Comunidad::orderBy('nombre')->get()),
             'lineas' => app(ModuloRepositorioService::class)->lineasInvestigacionActivas(),
-            'tipos_publicacion' => TipoPublicacion::where('estado_logico', true)->orderBy('nombre')->get(),
-            'tipos_investigacion' => TipoInvestigacion::where('estado_logico', true)->orderBy('nombre')->get(),
-            'metodologias' => MetodologiaInvestigacion::where('estado_logico', true)->orderBy('nombre')->get(),
+            'tipos_publicacion' => Cache::remember('busqueda_tipos_publicacion', $catTtl, fn() => TipoPublicacion::where('estado_logico', true)->orderBy('nombre')->get()),
+            'tipos_investigacion' => Cache::remember('busqueda_tipos_investigacion', $catTtl, fn() => TipoInvestigacion::where('estado_logico', true)->orderBy('nombre')->get()),
+            'metodologias' => Cache::remember('busqueda_metodologias', $catTtl, fn() => MetodologiaInvestigacion::where('estado_logico', true)->orderBy('nombre')->get()),
         ];
     }
 
