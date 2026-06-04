@@ -2,6 +2,8 @@
 
 use App\Models\Componente;
 use App\Models\Coordinacion;
+use App\Services\IntranetEquipoSeccionService;
+use Illuminate\Support\Collection;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -9,11 +11,20 @@ new class extends Component {
     use WithPagination;
 
     public $search = '';
+    public $filterPrograma = '';
+    public $filterTrayecto = '';
     public $viewMode = 'list';
     public $editingId = null;
 
     public $coordinacion_id = '';
     public $anio = '';
+
+    public Collection $trayectosPrograma;
+
+    public function mount()
+    {
+        $this->trayectosPrograma = collect();
+    }
 
     // For editing or single mode
     public $nombre = '';
@@ -53,10 +64,40 @@ new class extends Component {
         $this->resetPage();
     }
 
+    public function updatingFilterPrograma()
+    {
+        $this->resetPage();
+    }
+
+    public function updatingFilterTrayecto()
+    {
+        $this->resetPage();
+    }
+
+    public function updatedCoordinacionId($value)
+    {
+        $this->anio = '';
+        $this->loadTrayectosPrograma();
+    }
+
+    protected function loadTrayectosPrograma()
+    {
+        if ($this->coordinacion_id === '') {
+            $this->trayectosPrograma = collect();
+
+            return;
+        }
+
+        $this->trayectosPrograma = app(IntranetEquipoSeccionService::class)
+            ->trayectosEnLapso(null, (int) $this->coordinacion_id);
+    }
+
     public function create()
     {
         $this->resetValidation();
         $this->resetFields();
+
+        $this->loadTrayectosPrograma();
         $this->rows = [['nombre' => '', 'es_obligatorio' => true]];
 
         $this->viewMode = 'form';
@@ -86,6 +127,7 @@ new class extends Component {
         $this->anio = $comp->anio;
         $this->es_obligatorio = $comp->es_obligatorio;
 
+        $this->loadTrayectosPrograma();
         $this->viewMode = 'form';
     }
 
@@ -147,13 +189,35 @@ new class extends Component {
 
     public function with()
     {
-        $query = Componente::where(function ($q) {
-            $q->where('nombre', 'like', "%{$this->search}%")->orWhere('anio', 'like', "%{$this->search}%");
-        });
+        $query = Componente::query();
+
+        if ($this->search !== '') {
+            $query->where(function ($q) {
+                $q->where('nombre', 'like', "%{$this->search}%")
+                  ->orWhere('anio', 'like', "%{$this->search}%");
+            });
+        }
+
+        if ($this->filterPrograma !== '') {
+            $query->where('coordinacion_id', $this->filterPrograma);
+        }
+
+        if ($this->filterTrayecto !== '') {
+            $query->where('anio', $this->filterTrayecto);
+        }
+
+        $trayectosDb = \App\Models\Trayecto::on(\App\Helpers\DbHelper::connection())
+            ->whereNotNull('tra_nombre')
+            ->orderBy('tra_nombre')
+            ->pluck('tra_nombre')
+            ->unique()
+            ->values()
+            ->toArray();
 
         return [
             'listaRegistros' => $query->latest()->paginate(10),
             'programas' => app(\App\Services\AcademicCatalog::class)->programasForSelect(),
+            'trayectos' => $trayectosDb ?: ['I', 'II', 'III', 'IV', 'V', 'VI'],
         ];
     }
 };
@@ -232,13 +296,26 @@ new class extends Component {
     @endif
 
     @if ($viewMode === 'list')
-        <div style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
-            <div>
-                <b>Filtrar Componente:</b>
-                <input wire:model.live="search" type="text" style="width: 250px;"
-                    placeholder="Buscar componente o año...">
+        <div style="margin-bottom: 15px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px;">
+            <select wire:model.live="filterPrograma" style="padding: 4px; min-width: 200px;">
+                <option value="">Todos los programas</option>
+                @foreach ($programas as $p)
+                    <option value="{{ $p->id }}">{{ $p->siglas }} - {{ $p->nombre }}</option>
+                @endforeach
+            </select>
+            <select wire:model.live="filterTrayecto" style="padding: 4px; min-width: 120px;">
+                <option value="">Todos los trayectos</option>
+                @foreach ($trayectos as $t)
+                    <option value="{{ $t }}">Trayecto {{ $t }}</option>
+                @endforeach
+            </select>
+            <div style="display: flex; align-items: center; gap: 4px;">
+                <b>Buscar:</b>
+                <input wire:model.live.debounce.300ms="search" type="text" style="width: 400px; padding: 4px 6px; border-radius: 4px; border: 1px solid #999;"
+                    placeholder="Componente o año...">
             </div>
-            <button wire:click="create" class="cm-btn cm-btn-success cm-btn-sm">
+            <span style="margin-left: auto;"></span>
+            <button wire:click="create" class="cm-btn cm-btn-success" style="font-size: 13px; padding: 6px 14px;">
                 Adicionar Componente Nuevo
             </button>
         </div>
@@ -285,7 +362,7 @@ new class extends Component {
                                 <div class="cm-btn-group"
                                     style="display: inline-flex; flex-wrap: wrap; justify-content: center;">
                                     <button type="button" wire:click.prevent="edit({{ $item->id }})"
-                                        title="Editar Regla" class="cm-btn cm-btn-primary cm-btn-sm">
+                                        title="Editar Regla" class="cm-btn cm-btn-secondary cm-btn-sm">
                                         Editar
                                     </button>
                                     <button type="button" wire:click.prevent="toggleStatus({{ $item->id }})"
@@ -326,7 +403,7 @@ new class extends Component {
                         <td width="30%"><b>Programa Titular:</b></td>
                         <td width="70%">
                             @if (auth()->user()->hasRole('administrador'))
-                                <select wire:model="coordinacion_id" style="width: 80%; padding: 4px;">
+                                <select wire:model.live="coordinacion_id" style="width: 80%; padding: 4px;">
                                     <option value="">Seleccione a quién pertenece esta regla...</option>
                                     @foreach ($programas as $p)
                                         <option value="{{ $p->id }}">{{ $p->siglas }} -
@@ -347,8 +424,12 @@ new class extends Component {
                     <tr>
                         <td width="30%"><b>Aplica a los de Trayecto/Año:</b></td>
                         <td width="70%">
-                            <input type="text" wire:model="anio" style="width: 25%; padding: 4px;"
-                                placeholder="Ej: I, II, III, IV...">
+                            <select wire:model="anio" style="width: 30%; padding: 4px;">
+                                <option value="">Seleccione trayecto...</option>
+                                @foreach ($trayectosPrograma as $t)
+                                    <option value="{{ $t->tra_nombre }}">{{ $t->tra_nombre }}</option>
+                                @endforeach
+                            </select>
                             @error('anio')
                                 <br><span style="color:red; font-size:10px;">{{ $message }}</span>
                             @enderror
@@ -428,7 +509,7 @@ new class extends Component {
                             Registrar Componentes
                         @endif
                     </button>
-                    <button type="button" wire:click="cancel" class="cm-btn cm-btn-secondary">
+                    <button type="button" wire:click="cancel" class="cm-btn cm-btn-danger">
                         Cancelar
                     </button>
                 </div>

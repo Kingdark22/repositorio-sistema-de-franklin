@@ -255,7 +255,7 @@ new class extends Component {
             </div>
 
             <div style="text-align: left; margin-top: 20px;">
-                <button type="button" wire:click="backToList" class="cm-btn cm-btn-secondary"
+                <button type="button" wire:click="backToList" class="cm-btn cm-btn-danger"
                     style="margin-right: 10px;">Cancelar</button>
                 <button type="button" wire:click="reject" class="cm-btn cm-btn-danger">Confirmar Rechazo</button>
             </div>

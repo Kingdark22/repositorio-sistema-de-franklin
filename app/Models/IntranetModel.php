@@ -12,6 +12,9 @@ abstract class IntranetModel extends Model
 {
     public function getConnectionName(): ?string
     {
+        if ($this->connection) {
+            return $this->connection;
+        }
         return DbHelper::connection();
     }
 }

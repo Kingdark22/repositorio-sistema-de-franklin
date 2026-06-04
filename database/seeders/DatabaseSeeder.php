@@ -15,9 +15,8 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        $this->call(RolSeeder::class);
-        $this->call(EstadoSeeder::class);
-        $this->call(MunicipioSeeder::class);
+        $this->call(EstadoMunicipioSeeder::class);
+        $this->call(SimulacionAcademicaSeeder::class);
         
         // Agregar roles a la tabla 'roles'
         \Illuminate\Support\Facades\DB::table('roles')->insert([
@@ -69,7 +68,7 @@ class DatabaseSeeder extends Seeder
         \App\Models\Coordinacion::create(['nombre' => 'Informática', 'descripcion' => 'Programa Nacional de Formación en Informática']);
         \App\Models\Coordinacion::create(['nombre' => 'Agroalimentación', 'descripcion' => 'Programa Nacional de Formación en Agroalimentación']);
 
-        \App\Models\Comunidad::create(['nombre' => 'Comunidad Las Brisas', 'direccion' => 'Sector 1, Calle 2']);
-        \App\Models\Comunidad::create(['nombre' => 'Comunidad El Centro', 'direccion' => 'Av. Principal']);
+        \App\Models\Comunidad::create(['nombre' => 'Comunidad Las Brisas']);
+        \App\Models\Comunidad::create(['nombre' => 'Comunidad El Centro']);
     }
 }

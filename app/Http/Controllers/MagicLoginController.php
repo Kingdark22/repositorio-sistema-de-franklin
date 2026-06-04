@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\DbHelper;
+use App\Helpers\DualDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 use App\Models\User;
 use App\Services\IntranetSimulationMirrorService;
 use App\Services\UserRoleService;
@@ -98,12 +100,41 @@ class MagicLoginController extends Controller
         $cedula = trim($payload['cedula']);
 
         try {
-            // 4. Buscar usuario en BD externa con fallback automático a simulación.
-            $connection = DbHelper::connection();
-            $user = User::on($connection)->whereRaw('TRIM(usu_cedula) = ?', [$cedula])->first();
+            $user = null;
 
-            if (! $user && $connection === 'intranet') {
-                $user = User::on('simulacion')->whereRaw('TRIM(usu_cedula) = ?', [$cedula])->first();
+            // 1. Intentar explícitamente en SOGAC (Intranet)
+            try {
+                $row = DB::connection('intranet')
+                    ->table('usuario')
+                    ->whereRaw('TRIM(usu_cedula) = ?', [$cedula])
+                    ->first();
+
+                if ($row) {
+                    $user = new User();
+                    $user->forceFill((array) $row);
+                    $user->exists = true;
+                }
+            } catch (\Exception $e) {
+                DbHelper::handleQueryError($e);
+                Log::warning('MagicLogin: Intento en SOGAC falló, pasando a simulación: ' . $e->getMessage());
+            }
+
+            // 2. Fallback a simulación si no se encontró en SOGAC o hubo error
+            if (!$user) {
+                try {
+                    $row = DB::connection('simulacion')
+                        ->table('usuario')
+                        ->whereRaw('TRIM(usu_cedula) = ?', [$cedula])
+                        ->first();
+
+                    if ($row) {
+                        $user = new User();
+                        $user->forceFill((array) $row);
+                        $user->exists = true;
+                    }
+                } catch (\Exception $e) {
+                    Log::error('MagicLogin: Error crítico al consultar simulación: ' . $e->getMessage());
+                }
             }
 
             if (!$user) {

@@ -2,17 +2,18 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Estado extends Model
 {
-    use HasFactory;
+    protected $primaryKey = 'est_codigo';
 
-    protected $fillable = ['nombre'];
+    protected $fillable = ['est_nombre'];
 
-    public function comunidades()
+    protected $table = 'estados';
+
+    public function municipios()
     {
-        return $this->hasMany(Comunidad::class);
+        return $this->hasMany(Municipio::class, 'est_codigo');
     }
 }

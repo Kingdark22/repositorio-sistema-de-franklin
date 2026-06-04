@@ -47,12 +47,14 @@ class DbHelper
 
         if (self::intranetAlcanzable()) {
             try {
-                DB::connection('intranet')->getPdo();
+                $pdo = DB::connection('intranet')->getPdo();
+                $pdo->exec('SET statement_timeout = 5000');
+                $pdo->query('SELECT 1')->fetch();
                 self::$connectionName = 'intranet';
                 self::$usingIntranet = true;
                 Cache::put(self::CACHE_KEY, 'intranet', now()->addSeconds(self::CACHE_TTL));
             } catch (\Exception $e) {
-                Log::warning('Intranet no disponible (PDO): ' . $e->getMessage());
+                Log::warning('Intranet no disponible (PDO/query): ' . $e->getMessage());
                 self::$connectionName = 'simulacion';
                 self::$usingIntranet = false;
                 Cache::put(self::CACHE_KEY, 'simulacion', now()->addSeconds(self::CACHE_TTL));
@@ -66,6 +68,21 @@ class DbHelper
         self::$resolved = true;
 
         return self::$connectionName;
+    }
+
+    /**
+     * Verifica si un error de base de datos es por timeout/caída de intranet.
+     * Si es así, resetea el cache para que la siguiente petición pruebe simulación.
+     */
+    public static function handleQueryError(\Exception $e): void
+    {
+        $msg = $e->getMessage();
+        if (str_contains($msg, 'timeout expired') || str_contains($msg, '08006') || str_contains($msg, 'could not connect')) {
+            if (self::$usingIntranet || Cache::get(self::CACHE_KEY) === 'intranet') {
+                Log::warning('Intranet query falló, cambiando a simulación: ' . $msg);
+                self::reset();
+            }
+        }
     }
 
     /**

@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: May 26, 2026 at 05:42 PM
+-- Generation Time: Jun 02, 2026 at 12:27 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -52,7 +52,7 @@ INSERT INTO `estudiante` (`est_cedula`, `est_fecha_ingreso`, `est_cod_programa`,
 CREATE TABLE `inscripcion` (
   `ins_codigo` int(11) NOT NULL,
   `ins_cedula` varchar(20) DEFAULT NULL,
-  `ins_cod_seccion_unidad_doc` int(11) DEFAULT NULL,
+  `ins_cod_seccion_unidad_docente` int(11) DEFAULT NULL,
   `ins_nota_final_100` decimal(5,2) DEFAULT NULL,
   `ins_nota_final_20` int(11) DEFAULT NULL,
   `ins_estatus` char(1) DEFAULT 'A'
@@ -62,7 +62,7 @@ CREATE TABLE `inscripcion` (
 -- Dumping data for table `inscripcion`
 --
 
-INSERT INTO `inscripcion` (`ins_codigo`, `ins_cedula`, `ins_cod_seccion_unidad_doc`, `ins_nota_final_100`, `ins_nota_final_20`, `ins_estatus`) VALUES
+INSERT INTO `inscripcion` (`ins_codigo`, `ins_cedula`, `ins_cod_seccion_unidad_docente`, `ins_nota_final_100`, `ins_nota_final_20`, `ins_estatus`) VALUES
 (542711, '31306741    ', NULL, 79.00, 16, 'A'),
 (542712, '31306741    ', NULL, 67.00, 14, 'A'),
 (542713, '31306741    ', NULL, 88.00, 18, 'A'),
@@ -258,102 +258,9 @@ INSERT INTO `lapso_academico` (`lap_codigo`, `lap_nombre`, `lap_fecha_inicio`, `
 (70, '2025-INT', '2025-07-07', '2025-09-26', 'A', 'S'),
 (71, '2025-II', '2025-09-15', '2026-01-30', 'A', 'S'),
 (72, '2026-I', '2026-03-01', '2026-07-14', 'A', 'N'),
-(73, 'No Regist.', NULL, NULL, 'A', 'N'),
-(74, 'No Regist.', NULL, NULL, 'A', 'N'),
-(75, 'No Regist.', NULL, NULL, 'A', 'N'),
-(76, 'No Regist.', NULL, NULL, 'A', 'N'),
-(77, 'No Regist.', NULL, NULL, 'A', 'N'),
-(78, 'No Regist.', NULL, NULL, 'A', 'N'),
-(79, 'No Regist.', NULL, NULL, 'A', 'N'),
-(80, 'No Regist.', NULL, NULL, 'A', 'N'),
-(81, 'No Regist.', NULL, NULL, 'A', 'N'),
-(82, 'No Regist.', NULL, NULL, 'A', 'N'),
-(83, 'No Regist.', NULL, NULL, 'A', 'N'),
-(84, 'No Regist.', NULL, NULL, 'A', 'N'),
-(85, 'No Regist.', NULL, NULL, 'A', 'N'),
-(86, 'No Regist.', NULL, NULL, 'A', 'N'),
-(87, 'No Regist.', NULL, NULL, 'A', 'N'),
-(88, 'No Regist.', NULL, NULL, 'A', 'N'),
-(89, 'No Regist.', NULL, NULL, 'A', 'N'),
-(90, 'No Regist.', NULL, NULL, 'A', 'N'),
-(91, 'No Regist.', NULL, NULL, 'A', 'N'),
-(92, 'No Regist.', NULL, NULL, 'A', 'N'),
-(93, 'No Regist.', NULL, NULL, 'A', 'N'),
-(94, 'No Regist.', NULL, NULL, 'A', 'N'),
-(95, 'No Regist.', NULL, NULL, 'A', 'N'),
-(96, 'No Regist.', NULL, NULL, 'A', 'N'),
-(97, 'No Regist.', NULL, NULL, 'A', 'N'),
-(98, 'No Regist.', NULL, NULL, 'A', 'N'),
-(99, 'No Regist.', NULL, NULL, 'A', 'N'),
-(100, 'No Regist.', NULL, NULL, 'A', 'N'),
-(101, 'No Regist.', NULL, NULL, 'A', 'N'),
-(102, 'No Regist.', NULL, NULL, 'A', 'N'),
-(103, 'No Regist.', NULL, NULL, 'A', 'N'),
-(104, 'No Regist.', NULL, NULL, 'A', 'N'),
-(105, 'No Regist.', NULL, NULL, 'A', 'N'),
-(106, 'No Regist.', NULL, NULL, 'A', 'N'),
-(107, 'No Regist.', NULL, NULL, 'A', 'N'),
-(108, 'No Regist.', NULL, NULL, 'A', 'N'),
-(109, 'No Regist.', NULL, NULL, 'A', 'N'),
-(110, 'No Regist.', NULL, NULL, 'A', 'N'),
-(111, 'No Regist.', NULL, NULL, 'A', 'N'),
-(112, 'No Regist.', NULL, NULL, 'A', 'N'),
-(113, 'No Regist.', NULL, NULL, 'A', 'N'),
-(114, 'No Regist.', NULL, NULL, 'A', 'N'),
-(115, 'No Regist.', NULL, NULL, 'A', 'N'),
-(116, 'No Regist.', NULL, NULL, 'A', 'N'),
-(117, 'No Regist.', NULL, NULL, 'A', 'N'),
-(118, 'No Regist.', NULL, NULL, 'A', 'N'),
-(119, 'No Regist.', NULL, NULL, 'A', 'N'),
-(120, 'No Regist.', NULL, NULL, 'A', 'N'),
-(121, 'No Regist.', NULL, NULL, 'A', 'N'),
-(122, 'No Regist.', NULL, NULL, 'A', 'N'),
-(123, 'No Regist.', NULL, NULL, 'A', 'N'),
-(124, 'No Regist.', NULL, NULL, 'A', 'N'),
-(125, 'No Regist.', NULL, NULL, 'A', 'N'),
-(126, 'No Regist.', NULL, NULL, 'A', 'N'),
-(127, 'No Regist.', NULL, NULL, 'A', 'N'),
-(128, 'No Regist.', NULL, NULL, 'A', 'N'),
-(129, 'No Regist.', NULL, NULL, 'A', 'N'),
-(130, 'No Regist.', NULL, NULL, 'A', 'N'),
-(131, 'No Regist.', NULL, NULL, 'A', 'N'),
-(132, 'No Regist.', NULL, NULL, 'A', 'N'),
-(133, 'No Regist.', NULL, NULL, 'A', 'N'),
-(134, 'No Regist.', NULL, NULL, 'A', 'N'),
-(135, 'No Regist.', NULL, NULL, 'A', 'N'),
-(136, 'No Regist.', NULL, NULL, 'A', 'N'),
-(137, 'No Regist.', NULL, NULL, 'A', 'N'),
-(138, 'No Regist.', NULL, NULL, 'A', 'N'),
-(139, 'No Regist.', NULL, NULL, 'A', 'N'),
-(140, 'No Regist.', NULL, NULL, 'A', 'N'),
-(141, 'No Regist.', NULL, NULL, 'A', 'N'),
-(142, 'No Regist.', NULL, NULL, 'A', 'N'),
-(143, 'No Regist.', NULL, NULL, 'A', 'N'),
-(144, 'No Regist.', NULL, NULL, 'A', 'N'),
-(145, 'No Regist.', NULL, NULL, 'A', 'N'),
-(146, 'No Regist.', NULL, NULL, 'A', 'N'),
-(147, 'No Regist.', NULL, NULL, 'A', 'N'),
-(148, 'No Regist.', NULL, NULL, 'A', 'N'),
-(149, 'No Regist.', NULL, NULL, 'A', 'N'),
-(150, 'No Regist.', NULL, NULL, 'A', 'N'),
-(151, 'No Regist.', NULL, NULL, 'A', 'N'),
-(152, 'No Regist.', NULL, NULL, 'A', 'N'),
-(153, 'No Regist.', NULL, NULL, 'A', 'N'),
-(154, 'No Regist.', NULL, NULL, 'A', 'N'),
-(155, 'No Regist.', NULL, NULL, 'A', 'N'),
-(156, 'No Regist.', NULL, NULL, 'A', 'N'),
-(157, 'No Regist.', NULL, NULL, 'A', 'N'),
-(158, 'No Regist.', NULL, NULL, 'A', 'N'),
-(159, 'No Regist.', NULL, NULL, 'A', 'N'),
-(160, 'No Regist.', NULL, NULL, 'A', 'N'),
-(161, 'No Regist.', NULL, NULL, 'A', 'N'),
-(162, 'No Regist.', NULL, NULL, 'A', 'N'),
-(163, 'No Regist.', NULL, NULL, 'A', 'N'),
-(164, 'No Regist.', NULL, NULL, 'A', 'N'),
-(165, 'No Regist.', NULL, NULL, 'A', 'N'),
-(166, 'No Regist.', NULL, NULL, 'A', 'N'),
-(167, 'No Regist.', NULL, NULL, 'A', 'N'),
-(168, 'No Regist.', NULL, NULL, 'A', 'N');
+(170, 'No Regist.', NULL, NULL, 'A', 'N'),
+(171, 'No Regist.', NULL, NULL, 'A', 'N'),
+(172, 'No Regist.', NULL, NULL, 'A', 'N');
 
 -- --------------------------------------------------------
 
@@ -365,6 +272,7 @@ CREATE TABLE `malla` (
   `mal_codigo` int(11) NOT NULL,
   `mal_nombre` varchar(100) DEFAULT NULL,
   `mal_cod_programa` int(11) DEFAULT NULL,
+  `mal_cod_trayecto` int(11) DEFAULT NULL,
   `mal_estatus` char(1) DEFAULT 'A'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -372,8 +280,8 @@ CREATE TABLE `malla` (
 -- Dumping data for table `malla`
 --
 
-INSERT INTO `malla` (`mal_codigo`, `mal_nombre`, `mal_cod_programa`, `mal_estatus`) VALUES
-(25, 'INF-2023', 4, 'A');
+INSERT INTO `malla` (`mal_codigo`, `mal_nombre`, `mal_cod_programa`, `mal_cod_trayecto`, `mal_estatus`) VALUES
+(25, 'INF-2023', 4, 5, 'A');
 
 -- --------------------------------------------------------
 
@@ -4844,7 +4752,8 @@ ALTER TABLE `lapso_academico`
 --
 ALTER TABLE `malla`
   ADD PRIMARY KEY (`mal_codigo`),
-  ADD KEY `mal_cod_programa` (`mal_cod_programa`);
+  ADD KEY `mal_cod_programa` (`mal_cod_programa`),
+  ADD KEY `fk_malla_trayecto` (`mal_cod_trayecto`);
 
 --
 -- Indexes for table `migrations`
@@ -4926,7 +4835,7 @@ ALTER TABLE `inscripcion`
 -- AUTO_INCREMENT for table `lapso_academico`
 --
 ALTER TABLE `lapso_academico`
-  MODIFY `lap_codigo` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=169;
+  MODIFY `lap_codigo` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=173;
 
 --
 -- AUTO_INCREMENT for table `malla`
@@ -5003,6 +4912,7 @@ ALTER TABLE `inscripcion`
 -- Constraints for table `malla`
 --
 ALTER TABLE `malla`
+  ADD CONSTRAINT `fk_malla_trayecto` FOREIGN KEY (`mal_cod_trayecto`) REFERENCES `trayecto` (`tra_codigo`) ON UPDATE CASCADE,
   ADD CONSTRAINT `malla_ibfk_1` FOREIGN KEY (`mal_cod_programa`) REFERENCES `programa` (`pro_codigo`);
 
 --

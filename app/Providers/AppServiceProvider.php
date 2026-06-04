@@ -49,7 +49,9 @@ class AppServiceProvider extends ServiceProvider
                     'api_token',
                     'guard_name',
                     'id',
-                    'uuid'
+                    'uuid',
+                    'ccon_cargo',
+                    'cargo'
                 ];
 
                 foreach ($model->getAttributes() as $key => $value) {

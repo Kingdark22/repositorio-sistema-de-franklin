@@ -107,7 +107,7 @@ class GrupoProyectoService
 
         $payload = [
             'grp_nombre' => trim($nombre),
-            'grp_contexto' => $contexto,
+            'grp_contexto' => json_encode($contexto, JSON_UNESCAPED_UNICODE),
             'grp_com_codigo' => $comCodigo,
             'grp_creador_cedula' => trim($creadorCedula),
             'grp_miembros' => json_encode($miembros, JSON_UNESCAPED_UNICODE),
@@ -178,11 +178,7 @@ class GrupoProyectoService
         }
         if (!empty($filtros['busqueda'])) {
             $term = '%' . mb_strtolower(trim((string) $filtros['busqueda'])) . '%';
-            $query->where(function ($q) use ($term) {
-                $q->whereRaw('LOWER(grp_nombre) LIKE ?', [$term])
-                    ->orWhereJsonContains('grp_miembros', ['nombre', $term])
-                    ->orWhereJsonContains('grp_miembros', ['apellido', $term]);
-            });
+            $query->whereRaw('LOWER(grp_nombre) LIKE ?', [$term]);
         }
 
         $cacheEtiquetas = [];

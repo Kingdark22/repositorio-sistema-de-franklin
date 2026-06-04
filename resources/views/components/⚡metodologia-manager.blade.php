@@ -170,13 +170,13 @@ new class extends Component {
 
     @if ($viewMode === 'list')
         <!-- Header Actions -->
-        <div style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+        <div style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; gap: 20px;">
             <div>
                 <b>Buscar Metodología:</b>
-                <input wire:model.live="search" type="text" style="width: 250px;" placeholder="...">
+                <input wire:model.live.debounce.300ms="search" type="text" style="width: 500px; padding: 4px 6px; border-radius: 4px; border: 1px solid #999;" placeholder="...">
             </div>
 
-            <button wire:click="create" class="cm-btn cm-btn-success cm-btn-sm" style="min-width: 170px;">
+            <button wire:click="create" class="cm-btn cm-btn-success cm-btn-sm">
                 Registrar Metodología
             </button>
         </div>
@@ -215,7 +215,7 @@ new class extends Component {
                             </td>
                             <td align="center">
                                 <div
-                                    style="display: inline-flex; flex-direction: column; align-items: center; gap: 4px;">
+                                    style="display: inline-flex; align-items: center; gap: 4px;">
                                     <button type="button" wire:click.prevent="edit({{ $item->id }})" title="Editar"
                                         class="cm-btn cm-btn-secondary cm-btn-sm">Editar</button>
                                     <button type="button" wire:click.prevent="toggleStatus({{ $item->id }})"
@@ -279,7 +279,7 @@ new class extends Component {
                 </div>
 
                 <div style="text-align: center; margin-top: 20px;">
-                    <button type="button" wire:click="cancel" class="cm-btn cm-btn-secondary"
+                    <button type="button" wire:click="cancel" class="cm-btn cm-btn-danger"
                         style="margin-right: 10px;">Cancelar</button>
                     <button type="submit" class="cm-btn cm-btn-primary">Guardar</button>
                 </div>

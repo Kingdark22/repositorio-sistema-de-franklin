@@ -44,7 +44,7 @@ return [
             'rif' => 'com_rif',
             'correo' => 'com_correo',
             'numero_telefono' => 'com_numero_telefono',
-            'direccion' => 'com_direccion',
+            'direccion_id' => 'dir_codigo',
         ],
     ],
 

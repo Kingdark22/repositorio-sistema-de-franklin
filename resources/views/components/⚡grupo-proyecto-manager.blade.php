@@ -22,6 +22,12 @@ new class extends Component {
     public string $filterSeccion = '';
 
     public string $filterTrayecto = '';
+    
+    // Campos específicos del formulario (evitan colisiones con los filtros de lista)
+    public string $formLapso = '';
+    public string $formPrograma = '';
+    public string $formSeccion = '';
+    public string $formTrayecto = '';
 
     public string $filterEquipo = '';
 
@@ -53,11 +59,6 @@ new class extends Component {
         $this->lapsos = $profesores->lapsosActivos();
         $this->comunidades = Comunidad::query()->orderBy('nombre')->get();
 
-        $lap = $profesores->lapsoVigenteCodigo();
-        if ($lap) {
-            $this->filterLapso = (string) $lap;
-        }
-
         $this->loadProgramas();
         $this->loadSecciones();
         $this->loadTrayectos();
@@ -83,6 +84,10 @@ new class extends Component {
         $this->filterLapso = (string) $g->lap_codigo;
         $this->filterPrograma = $g->pro_codigo ? (string) $g->pro_codigo : '';
         $this->filterSeccion = (string) $g->sec_codigo;
+        // También poblar los campos del formulario para editar sin depender de los filtros de lista
+        $this->formLapso = (string) $g->lap_codigo;
+        $this->formPrograma = $g->pro_codigo ? (string) $g->pro_codigo : '';
+        $this->formSeccion = (string) $g->sec_codigo;
         $this->comunidadId = $g->com_codigo ? (string) $g->com_codigo : '';
         $this->miembrosSeleccionados = array_map(
             fn($m) => [
@@ -156,13 +161,13 @@ new class extends Component {
         $this->validate(
             [
                 'nombreGrupo' => 'required|min:2|max:120',
-                'filterLapso' => 'required',
-                'filterSeccion' => 'required',
+                'formLapso' => 'required',
+                'formSeccion' => 'required',
             ],
             [
                 'nombreGrupo.required' => 'Indique un nombre para el equipo/grupo.',
-                'filterLapso.required' => 'Seleccione el lapso.',
-                'filterSeccion.required' => 'Seleccione la sección del PNF.',
+                'formLapso.required' => 'Seleccione el lapso.',
+                'formSeccion.required' => 'Seleccione la sección del PNF.',
             ],
         );
 
@@ -173,7 +178,7 @@ new class extends Component {
         }
 
         $user = auth()->user();
-        $clave = $grupos->registrar($this->nombreGrupo, (int) $this->filterLapso, (int) $this->filterSeccion, $this->filterPrograma !== '' ? (int) $this->filterPrograma : null, $this->comunidadId !== '' ? (int) $this->comunidadId : null, $this->miembrosSeleccionados, trim((string) $user->usu_cedula), $this->editingGrpCodigo, $this->etiquetasContextoFormulario(app(IntranetEquipoSeccionService::class)));
+        $clave = $grupos->registrar($this->nombreGrupo, (int) $this->formLapso, (int) $this->formSeccion, $this->formPrograma !== '' ? (int) $this->formPrograma : null, $this->comunidadId !== '' ? (int) $this->comunidadId : null, $this->miembrosSeleccionados, trim((string) $user->usu_cedula), $this->editingGrpCodigo, $this->etiquetasContextoFormulario(app(IntranetEquipoSeccionService::class)));
 
         if (!$clave) {
             session()->flash('message_error', 'Debe incluir al menos un integrante y un líder.');
@@ -205,24 +210,35 @@ new class extends Component {
         $this->comunidadId = '';
         $this->miembrosSeleccionados = [];
         $this->selectedCedula = '';
+        // limpiar también campos del formulario
+        $this->formLapso = '';
+        $this->formPrograma = '';
+        $this->formSeccion = '';
+        $this->formTrayecto = '';
     }
 
-    public function updatedFilterLapso(): void
+    public function updatingSearch(): void
     {
-        $this->filterPrograma = '';
-        $this->filterSeccion = '';
-        $this->filterTrayecto = '';
-        $this->loadProgramas();
-        $this->loadSecciones();
-        $this->loadTrayectos();
+        $this->resetPage();
     }
 
-    public function updatedFilterPrograma(): void
+    // Hooks y cargadores separados para el formulario (no interfieren con los filtros de lista)
+    public function updatedFormLapso(): void
     {
-        $this->filterSeccion = '';
-        $this->filterTrayecto = '';
-        $this->loadSecciones();
-        $this->loadTrayectos();
+        $this->formPrograma = '';
+        $this->formSeccion = '';
+        $this->formTrayecto = '';
+        $this->loadFormProgramas();
+        $this->loadFormSecciones();
+        $this->loadFormTrayectos();
+    }
+
+    public function updatedFormPrograma(): void
+    {
+        $this->formSeccion = '';
+        $this->formTrayecto = '';
+        $this->loadFormSecciones();
+        $this->loadFormTrayectos();
     }
 
     protected function loadProgramas(): void
@@ -245,13 +261,33 @@ new class extends Component {
         $this->trayectos = app(IntranetEquipoSeccionService::class)->trayectosEnLapso($lapCodigo, $programaCodigo);
     }
 
+    protected function loadFormProgramas(): void
+    {
+        $lapCodigo = $this->formLapso !== '' ? (int) $this->formLapso : null;
+        $this->programas = app(IntranetEquipoSeccionService::class)->programasEnLapso($lapCodigo);
+    }
+
+    protected function loadFormSecciones(): void
+    {
+        $lapCodigo = $this->formLapso !== '' ? (int) $this->formLapso : null;
+        $programaCodigo = $this->formPrograma !== '' ? (int) $this->formPrograma : null;
+        $this->secciones = app(IntranetEquipoSeccionService::class)->seccionesEnLapso($lapCodigo, $programaCodigo);
+    }
+
+    protected function loadFormTrayectos(): void
+    {
+        $lapCodigo = $this->formLapso !== '' ? (int) $this->formLapso : null;
+        $programaCodigo = $this->formPrograma !== '' ? (int) $this->formPrograma : null;
+        $this->trayectos = app(IntranetEquipoSeccionService::class)->trayectosEnLapso($lapCodigo, $programaCodigo);
+    }
+
     protected function candidatosActuales()
     {
-        if ($this->filterLapso === '' || $this->filterSeccion === '') {
+        if ($this->formLapso === '' || $this->formSeccion === '') {
             return collect();
         }
 
-        return app(GrupoProyectoService::class)->candidatosSeccion((int) $this->filterLapso, (int) $this->filterSeccion);
+        return app(GrupoProyectoService::class)->candidatosSeccion((int) $this->formLapso, (int) $this->formSeccion);
     }
 
     /**
@@ -259,30 +295,39 @@ new class extends Component {
      */
     protected function etiquetasContextoFormulario(IntranetEquipoSeccionService $equipos): array
     {
-        if ($this->filterLapso === '' || $this->filterSeccion === '') {
+        if ($this->formLapso === '' || $this->formSeccion === '') {
             return ['lap_nombre' => '', 'sec_nombre' => '', 'pro_siglas' => '', 'pro_nombre' => ''];
         }
 
-        return $equipos->etiquetasContexto((int) $this->filterLapso, (int) $this->filterSeccion, $this->filterPrograma !== '' ? (int) $this->filterPrograma : null);
+        return $equipos->etiquetasContexto((int) $this->formLapso, (int) $this->formSeccion, $this->formPrograma !== '' ? (int) $this->formPrograma : null);
     }
 
-    public function with(GrupoProyectoService $grupos, IntranetEquipoSeccionService $equipos, IntranetProfessorService $profesores)
+    public function with()
     {
+        $grupos = app(GrupoProyectoService::class);
         $lapCodigo = $this->filterLapso !== '' ? (int) $this->filterLapso : null;
         $programaCodigo = $this->filterPrograma !== '' ? (int) $this->filterPrograma : null;
         $seccionCodigo = $this->filterSeccion !== '' ? (int) $this->filterSeccion : null;
         $trayectoCodigo = $this->filterTrayecto !== '' ? (int) $this->filterTrayecto : null;
 
-        $lista = $grupos->tablaDisponible()
-            ? $grupos->listar([
-                'lapso' => $lapCodigo,
-                'programa' => $programaCodigo,
-                'seccion' => $seccionCodigo,
-                'trayecto' => $trayectoCodigo,
-                'equipo' => $this->filterEquipo !== '' ? $this->filterEquipo : null,
-                'busqueda' => $this->search,
-            ])
-            : collect();
+        $tablaOk = $grupos->tablaDisponible();
+        $total = 0;
+        $lista = collect();
+        if ($tablaOk) {
+            try {
+                $total = \App\Models\GrupoProyectoModulo::count();
+                $lista = $grupos->listar([
+                    'lapso' => $lapCodigo,
+                    'programa' => $programaCodigo,
+                    'seccion' => $seccionCodigo,
+                    'trayecto' => $trayectoCodigo,
+                    'busqueda' => $this->search,
+                ]);
+            } catch (\Throwable $e) {
+                session()->flash('message_error', 'Error: ' . $e->getMessage());
+                $lista = collect();
+            }
+        }
 
         $perPage = 10;
         $page = $this->getPage();
@@ -297,7 +342,8 @@ new class extends Component {
             'trayectos' => $this->trayectos,
             'candidatos' => $this->viewMode === 'form' ? $this->candidatosActuales() : collect(),
             'comunidades' => $this->comunidades,
-            'tablaLista' => $grupos->tablaDisponible(),
+            'tablaLista' => $tablaOk,
+            'debugTotal' => $total,
         ];
     }
 };
@@ -323,13 +369,13 @@ new class extends Component {
     }
 
     .grp-btn-primary {
-        background: #1f2937;
+        background: #198754;
         color: #fff;
-        border-color: #1f2937;
+        border-color: #166f43;
     }
 
     .grp-btn-primary:hover {
-        background: #111827;
+        background: #146c43;
     }
 
     .grp-btn-secondary {
@@ -348,6 +394,75 @@ new class extends Component {
         font-size: 0.82rem;
         padding: 0.45rem 0.75rem;
         min-width: auto;
+    }
+
+    .cm-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        padding: 0.55rem 0.95rem;
+        font-size: 0.92rem;
+        font-weight: 600;
+        border: 1px solid transparent;
+        cursor: pointer;
+        transition: background-color 0.2s ease, transform 0.2s ease;
+        text-decoration: none;
+    }
+
+    .cm-btn:hover {
+        transform: translateY(-1px);
+    }
+
+    .cm-btn-primary {
+        background: #19692e;
+        border-color: #154f26;
+        color: #fff;
+    }
+
+    .cm-btn-success {
+        background: #198754;
+        border-color: #166f43;
+        color: #fff;
+    }
+
+    .cm-btn-warning {
+        background: #f0b606;
+        border-color: #d99e00;
+        color: #212529;
+    }
+
+    .cm-btn-danger {
+        background: #c82333;
+        border-color: #a71d2a;
+        color: #fff;
+    }
+
+    .cm-btn-secondary {
+        background: #f4f4f4;
+        border-color: #c2c2c2;
+        color: #222;
+    }
+
+    .cm-btn-sm {
+        padding: 0.35rem 0.75rem;
+        font-size: 0.85rem;
+    }
+
+    .grp-filter-select, .grp-filter-input {
+        height: 32px;
+        padding: 4px 8px;
+        font-size: 12px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        background: #fff;
+        box-sizing: border-box;
+    }
+    .grp-filter-select {
+        min-width: 140px;
+    }
+    .grp-filter-input {
+        width: 160px;
     }
 </style>
 
@@ -368,6 +483,7 @@ new class extends Component {
             {{ session('message_error') }}</div>
     @endif
 
+
     @if (!$tablaLista)
         <div style="background: #fff3cd; padding: 10px; font-size: 11px; margin-bottom: 12px;">
             Falta la tabla <code>grupo_proyecto_modulo</code> en MySQL repositorio (solo del módulo, no es intranet).
@@ -378,34 +494,33 @@ new class extends Component {
     @endif
 
     @if ($viewMode === 'list')
-        <div style="margin-bottom: 10px; display: flex; gap: 8px; flex-wrap: wrap; font-size: 11px;">
-            <select wire:model="filterLapso">
+        <div style="margin-bottom: 10px; display: flex; gap: 16px; flex-wrap: wrap; align-items: center;">
+            <select wire:model="filterLapso" class="grp-filter-select">
                 <option value="">Lapso</option>
                 @foreach ($lapsos as $l)
                     <option value="{{ $l->lap_codigo }}">{{ $l->lap_nombre }}</option>
                 @endforeach
             </select>
-            <select wire:model="filterPrograma" @if (!$filterLapso) disabled @endif>
+            <select wire:model="filterPrograma" class="grp-filter-select">
                 <option value="">PNF / Programa</option>
                 @foreach ($programas as $p)
                     <option value="{{ $p->pro_codigo }}">{{ $p->pro_siglas }}</option>
                 @endforeach
             </select>
-            <select wire:model="filterSeccion" @if (!$filterLapso) disabled @endif>
+            <select wire:model="filterSeccion" class="grp-filter-select">
                 <option value="">Sección</option>
                 @foreach ($secciones as $s)
                     <option value="{{ $s->sec_codigo }}">{{ $s->sec_nombre }}</option>
                 @endforeach
             </select>
-            <select wire:model="filterTrayecto" @if (!$filterLapso || !$filterPrograma) disabled @endif>
+            <select wire:model="filterTrayecto" class="grp-filter-select">
                 <option value="">Trayecto</option>
                 @foreach ($trayectos as $t)
                     <option value="{{ $t->tra_codigo }}">{{ $t->tra_nombre }}</option>
                 @endforeach
             </select>
-            <input wire:model="filterEquipo" type="text" placeholder="Cédula integrante…" style="width: 160px;">
-            <input wire:model.debounce.300ms="search" type="text" placeholder="Buscar nombre…" style="width: 160px;">
-            <button type="button" class="grp-btn grp-btn-primary" wire:click="crearGrupo">Registrar nuevo
+            <input wire:model.debounce.300ms="search" type="text" placeholder="Buscar nombre…" class="grp-filter-input" style="flex: 1; min-width: 200px;">
+            <button type="button" class="cm-btn cm-btn-success" wire:click="crearGrupo" style="margin-left: auto;">Registrar nuevo
                 grupo</button>
         </div>
 
@@ -418,7 +533,7 @@ new class extends Component {
                         <th>PNF/Sec.</th>
                         <th>Integrantes</th>
                         <th>Clave</th>
-                        <th></th>
+                        <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -435,9 +550,9 @@ new class extends Component {
                             <td align="center">{{ $g->integrantes }}</td>
                             <td><code style="font-size:9px;">{{ $g->clave }}</code></td>
                             <td align="center" nowrap>
-                                <button type="button" class="grp-btn grp-btn-secondary grp-btn-small"
+                                <button type="button" class="cm-btn cm-btn-secondary cm-btn-sm"
                                     wire:click="editarGrupo({{ $g->grp_codigo }})">Editar</button>
-                                <button type="button" class="grp-btn grp-btn-danger grp-btn-small"
+                                <button type="button" class="cm-btn cm-btn-danger cm-btn-sm"
                                     wire:click="eliminarGrupo({{ $g->grp_codigo }})"
                                     wire:confirm="¿Eliminar este grupo?">Eliminar</button>
                             </td>
@@ -459,9 +574,9 @@ new class extends Component {
             <table width="100%" style="font-size: 11px;">
                 <tr>
                     <td width="50%"><b>Nombre del equipo:</b><br><input wire:model="nombreGrupo" type="text"
-                            style="width:90%"></td>
+                            class="grp-filter-input" style="width:90%;"></td>
                     <td><b>Comunidad (opcional):</b><br>
-                        <select wire:model="comunidadId" style="width:90%">
+                        <select wire:model="comunidadId" class="grp-filter-select" style="width:90%;">
                             <option value="">—</option>
                             @foreach ($comunidades as $c)
                                 <option value="{{ $c->id }}">{{ $c->nombre }}</option>
@@ -472,47 +587,51 @@ new class extends Component {
                 <tr>
                     <td colspan="2" style="padding-top:8px;">
                         <b>Contexto académico:</b>
-                        <select wire:model.live="filterLapso" style="margin-left:4px;">
-                            <option value="">Lapso</option>
-                            @foreach ($lapsos as $l)
-                                <option value="{{ $l->lap_codigo }}">{{ $l->lap_nombre }}</option>
-                            @endforeach
-                        </select>
-                        <select wire:model.live="filterPrograma" style="margin-left:4px;"
-                            @if (!$filterLapso) disabled @endif>
-                            <option value="">PNF</option>
-                            @foreach ($programas as $p)
-                                <option value="{{ $p->pro_codigo }}">{{ $p->pro_siglas }}</option>
-                            @endforeach
-                        </select>
-                        <select wire:model.live="filterSeccion" style="margin-left:4px;"
-                            @if (!$filterLapso) disabled @endif>
-                            <option value="">Sección</option>
-                            @foreach ($secciones as $s)
-                                <option value="{{ $s->sec_codigo }}">{{ $s->sec_nombre }}</option>
-                            @endforeach
-                        </select>
+                        <div style="display: flex; gap: 16px; margin-top: 4px;">
+                            <select wire:model.live="formLapso" class="grp-filter-select">
+                                <option value="">Lapso</option>
+                                @foreach ($lapsos as $l)
+                                    <option value="{{ $l->lap_codigo }}">{{ $l->lap_nombre }}</option>
+                                @endforeach
+                            </select>
+                            <select wire:model.live="formPrograma" class="grp-filter-select"
+                                @if (!$formLapso) disabled @endif>
+                                <option value="">PNF</option>
+                                @foreach ($programas as $p)
+                                    <option value="{{ $p->pro_codigo }}">{{ $p->pro_siglas }}</option>
+                                @endforeach
+                            </select>
+                            <select wire:model.live="formSeccion" class="grp-filter-select"
+                                @if (!$formLapso) disabled @endif>
+                                <option value="">Sección</option>
+                                @foreach ($secciones as $s)
+                                    <option value="{{ $s->sec_codigo }}">{{ $s->sec_nombre }}</option>
+                                @endforeach
+                            </select>
+                        </div>
                     </td>
                 </tr>
             </table>
 
-            @if ($filterSeccion !== '')
+            @if ($formSeccion !== '')
                 <div style="margin-top: 12px; padding: 8px; background: #f5f5f5; border: 1px solid #ccc;">
                     <b>Agregar integrante (de la sección):</b><br>
-                    <select wire:model="selectedCedula" style="width: 55%; margin-top: 4px;">
-                        <option value="">Estudiante inscrito…</option>
-                        @foreach ($candidatos as $c)
-                            <option value="{{ $c->cedula }}">{{ $c->apellido }}, {{ $c->nombre }}
-                                ({{ $c->cedula }})
-                            </option>
-                        @endforeach
-                    </select>
-                    <select wire:model="selectedRolId" style="width: 20%;">
-                        <option value="1">Líder</option>
-                        <option value="2">Autor</option>
-                    </select>
-                    <button type="button" class="grp-btn grp-btn-secondary grp-btn-small"
-                        wire:click="agregarIntegrante">Agregar</button>
+                    <div style="display: flex; gap: 16px; align-items: center; margin-top: 4px;">
+                        <select wire:model="selectedCedula" class="grp-filter-select" style="flex: 1;">
+                            <option value="">Estudiante inscrito…</option>
+                            @foreach ($candidatos as $c)
+                                <option value="{{ $c->cedula }}">{{ $c->apellido }}, {{ $c->nombre }}
+                                    ({{ $c->cedula }})
+                                </option>
+                            @endforeach
+                        </select>
+                        <select wire:model="selectedRolId" class="grp-filter-select" style="width: 130px;">
+                            <option value="1">Líder</option>
+                            <option value="2">Autor</option>
+                        </select>
+                        <button type="button" class="cm-btn cm-btn-success cm-btn-sm"
+                            wire:click="agregarIntegrante">Agregar</button>
+                    </div>
                 </div>
 
                 <table width="100%" border="1" cellpadding="4"
@@ -549,9 +668,9 @@ new class extends Component {
             @endif
 
             <div style="margin-top: 14px;">
-                <button type="button" class="grp-btn grp-btn-primary" wire:click="registrarGrupo">Registrar
+                <button type="button" class="cm-btn cm-btn-success" wire:click="registrarGrupo">Registrar
                     grupo</button>
-                <button type="button" class="grp-btn grp-btn-secondary" wire:click="volver">Cancelar</button>
+                <button type="button" class="cm-btn cm-btn-danger" wire:click="volver">Cancelar</button>
             </div>
             <p style="font-size: 10px; color: #555; margin-top: 8px;">El registro del expediente del proyecto es un
                 paso aparte; luego elija este grupo al crear el expediente.</p>
