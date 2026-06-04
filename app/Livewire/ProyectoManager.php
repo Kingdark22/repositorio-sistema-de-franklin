@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Models\Proyecto;
+use App\Services\GrupoProyectoService;
 use App\Services\IntranetEquipoSeccionService;
 use App\Services\ProyectoGestionService;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -72,6 +73,12 @@ class ProyectoManager extends Component
     public ?Proyecto $selectedProject = null;
 
     public string $viewMode = 'list';
+
+    /** True cuando el equipo seleccionado es un grupo de proyecto registrado (EQGRP:) */
+    public bool $esGrupoRegistrado = false;
+
+    /** Nombre de la comunidad vinculada al grupo (solo lectura) */
+    public ?string $comunidadNombreGrupo = null;
 
     public function placeholder()
     {
@@ -183,9 +190,42 @@ class ProyectoManager extends Component
         $this->iniciarRegistro();
     }
 
-    public function updatedEquipoSeccionClave(IntranetEquipoSeccionService $equipos): void
+    public function updatedEquipoSeccionClave(GrupoProyectoService $grupos, IntranetEquipoSeccionService $equipos): void
     {
-        $partes = $equipos->parsearClave($this->equipo_seccion_clave);
+        $clave = $this->equipo_seccion_clave ?? '';
+
+        // Si se selecciona un grupo de proyecto registrado (EQGRP:)
+        if (str_starts_with($clave, GrupoProyectoService::PREFIJO . ':')) {
+            $grupo = $grupos->obtenerPorClave($clave);
+            if ($grupo) {
+                $this->esGrupoRegistrado = true;
+                // Auto-rellenar título con el nombre del grupo
+                $this->titulo = $grupo->nombre ?? '';
+                // Auto-rellenar comunidad con la comunidad registrada del grupo
+                if (!empty($grupo->com_codigo)) {
+                    $this->comunidad_id = (string) $grupo->com_codigo;
+                    // Buscar el nombre de la comunidad para mostrarlo en la vista
+                    $comunidad = \App\Models\Comunidad::find($grupo->com_codigo);
+                    $this->comunidadNombreGrupo = $comunidad?->nombre;
+                } else {
+                    $this->comunidad_id = '';
+                    $this->comunidadNombreGrupo = null;
+                }
+                // Actualizar lapso si se puede extraer del grupo
+                if (!empty($grupo->lap_codigo)) {
+                    $this->filterLapsoEquipo = (string) $grupo->lap_codigo;
+                }
+                return;
+            }
+        }
+
+        // Es una sección de intranet o se limpió la selección
+        $this->esGrupoRegistrado = false;
+        $this->comunidadNombreGrupo = null;
+        $this->titulo = '';
+        $this->comunidad_id = '';
+
+        $partes = $equipos->parsearClave($clave);
         if ($partes) {
             $this->filterLapsoEquipo = (string) $partes['lap_codigo'];
         }
@@ -233,11 +273,29 @@ class ProyectoManager extends Component
         }
     }
 
-    public function edit(int $id, ProyectoGestionService $gestion): void
+    public function edit(int $id, ProyectoGestionService $gestion, GrupoProyectoService $grupos): void
     {
         $this->resetFormulario();
         $this->fill($gestion->cargarParaEdicion($id));
         $this->viewMode = 'form';
+
+        // Reconstruir estado de grupo si el equipo seleccionado es un grupo de proyecto
+        $clave = $this->equipo_seccion_clave ?? '';
+        if (str_starts_with($clave, GrupoProyectoService::PREFIJO . ':')) {
+            $grupo = $grupos->obtenerPorClave($clave);
+            if ($grupo) {
+                $this->esGrupoRegistrado = true;
+                $this->titulo = $grupo->nombre ?? $this->titulo;
+                if (!empty($grupo->com_codigo)) {
+                    $comunidad = \App\Models\Comunidad::find($grupo->com_codigo);
+                    $this->comunidadNombreGrupo = $comunidad?->nombre;
+                    // Si no tiene comunidad_id asignado, auto-rellenar
+                    if (empty($this->comunidad_id)) {
+                        $this->comunidad_id = (string) $grupo->com_codigo;
+                    }
+                }
+            }
+        }
     }
 
     public function cancel(): void
@@ -393,6 +451,8 @@ class ProyectoManager extends Component
         $this->archivo_proyecto = null;
         $this->archivo_actual = '';
         $this->editingId = null;
+        $this->esGrupoRegistrado = false;
+        $this->comunidadNombreGrupo = null;
     }
 
     protected function estadoFormulario(): array

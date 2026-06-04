@@ -104,6 +104,24 @@ class UserRoleService
             $roles['profesor proyecto'] = $this->label('profesor proyecto');
         }
 
+        // Roles locales del sistema (tablas usuarios_externos y rol_externo)
+        $localConn = (string) config('dual_database.repositorio_connection', 'mysql');
+        try {
+            $localRoles = DB::connection($localConn)
+                ->table('usuarios_externos as uex')
+                ->join('rol_externo as rex', 'uex.uex_rex_codigo', '=', 'rex.rex_codigo')
+                ->where('uex.uex_nombre', $cedula)
+                ->where('uex.uex_estado', 1)
+                ->pluck('rex.rex_nombre');
+
+            foreach ($localRoles as $roleName) {
+                $slug = strtolower(trim($roleName));
+                $roles[$slug] = $this->label($slug);
+            }
+        } catch (\Throwable $e) {
+            // Silently ignore if table/connection is not ready
+        }
+
         Cache::put($cacheKey, $roles, now()->addSeconds(self::CACHE_TTL));
 
         $this->cachedAvailableRoles = $roles;
@@ -205,7 +223,7 @@ class UserRoleService
             return; // No hay roles detectados, no se asigna ninguno
         }
 
-        // Priorizar 'administrador' si está disponible entre los roles reales
+        // Priorizar 'administrador' si está disponible
         if (array_key_exists('administrador', $available)) {
             Session::put($this->sessionKey(), 'administrador');
             return;

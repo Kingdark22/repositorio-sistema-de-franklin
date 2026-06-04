@@ -61,7 +61,8 @@ class GenerateLoginLink extends Command
         }
 
         try {
-            $connectionName = \App\Helpers\DbHelper::connection();
+            // Forzar conexión a la intranet (PostgreSQL) — no usar fallback a simulación
+            $connectionName = 'intranet';
 
             $extUser = DB::connection($connectionName)
                 ->table('usuario')
@@ -75,7 +76,7 @@ class GenerateLoginLink extends Command
                 ->first();
 
             if (!$extUser) {
-                $this->error('Usuario no encontrado.');
+                $this->error('Usuario no encontrado en la intranet.');
                 return 1;
             }
 

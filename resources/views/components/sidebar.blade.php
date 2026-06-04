@@ -1,5 +1,5 @@
 @php
-    $nav = app(\App\Support\NavigationMenu::class)->flags(auth()->user());
+$nav = app(\App\Support\NavigationMenu::class)->flags(auth()->user());
 @endphp
 
 <link rel="stylesheet" href="{{ asset('css/legacy-sidebar.css') }}">
@@ -17,45 +17,45 @@
             <li>
                 <a href="{{ route('acceso-rol.index') }}"
                     class="legacy-menu-item {{ request()->routeIs('acceso-rol.index') ? 'active' : '' }}">
-                    Simular rol
+                    Acceder al Rol
                 </a>
             </li>
 
             @if ($nav['canViewAcademic'])
-                <li>
-                    <div class="legacy-menu-item has-submenu">
-                        Gestión académica
-                        <div class="arrow-icon"></div>
-                    </div>
-                    <div class="legacy-submenu">
-                        @if ($nav['canViewComunes'])
-                            <a href="{{ route('comunidades.index') }}"
-                                class="{{ request()->routeIs('comunidades.index') ? 'active-sub' : '' }}">Comunidades</a>
-                            <a href="{{ route('grupos-proyecto.index') }}"
-                                class="{{ request()->routeIs('grupos-proyecto.index') ? 'active-sub' : '' }}">Equipos de
-                                proyecto</a>
-                        @endif
+            <li>
+                <div class="legacy-menu-item has-submenu">
+                    Gestión académica
+                    <div class="arrow-icon"></div>
+                </div>
+                <div class="legacy-submenu">
+                    @if ($nav['canViewComunes'])
+                    <a href="{{ route('comunidades.index') }}"
+                        class="{{ request()->routeIs('comunidades.index') ? 'active-sub' : '' }}">Comunidades</a>
+                    <a href="{{ route('grupos-proyecto.index') }}"
+                        class="{{ request()->routeIs('grupos-proyecto.index') ? 'active-sub' : '' }}">Equipos de
+                        proyecto</a>
+                    @endif
 
-                        @if ($nav['canManageCatalogs'])
-                            <a href="{{ route('lineas-investigacion') }}"
-                                class="{{ request()->routeIs('lineas-investigacion') ? 'active-sub' : '' }}">Líneas de
-                                investigación</a>
-                            <a href="{{ route('tipos-investigacion') }}"
-                                class="{{ request()->routeIs('tipos-investigacion') ? 'active-sub' : '' }}">Tipos de
-                                investigación</a>
-                            <a href="{{ route('metodologia-investigacion') }}"
-                                class="{{ request()->routeIs('metodologia-investigacion') ? 'active-sub' : '' }}">Metodologías</a>
-                            <a href="{{ route('tipos-publicacion') }}"
-                                class="{{ request()->routeIs('tipos-publicacion') ? 'active-sub' : '' }}">Tipos de
-                                publicación</a>
-                        @endif
+                    @if ($nav['canManageCatalogs'])
+                    <a href="{{ route('lineas-investigacion') }}"
+                        class="{{ request()->routeIs('lineas-investigacion') ? 'active-sub' : '' }}">Líneas de
+                        investigación</a>
+                    <a href="{{ route('tipos-investigacion') }}"
+                        class="{{ request()->routeIs('tipos-investigacion') ? 'active-sub' : '' }}">Tipos de
+                        investigación</a>
+                    <a href="{{ route('metodologia-investigacion') }}"
+                        class="{{ request()->routeIs('metodologia-investigacion') ? 'active-sub' : '' }}">Metodologías</a>
+                    <a href="{{ route('tipos-publicacion') }}"
+                        class="{{ request()->routeIs('tipos-publicacion') ? 'active-sub' : '' }}">Tipos de
+                        publicación</a>
+                    @endif
 
-                        @if ($nav['canManageComponents'])
-                            <a href="{{ route('componentes.index') }}"
-                                class="{{ request()->routeIs('componentes.index') ? 'active-sub' : '' }}">Componentes</a>
-                        @endif
-                    </div>
-                </li>
+                    @if ($nav['canManageComponents'])
+                    <a href="{{ route('componentes.index') }}"
+                        class="{{ request()->routeIs('componentes.index') ? 'active-sub' : '' }}">Componentes</a>
+                    @endif
+                </div>
+            </li>
             @endif
 
             <li>
@@ -67,30 +67,70 @@
                     <a href="{{ route('proyectos.buscar') }}"
                         class="{{ request()->routeIs('proyectos.buscar') ? 'active-sub' : '' }}">Explorar proyectos</a>
                     @if ($nav['canRegisterProject'] || $nav['canValidateProjects'])
-                        <a href="{{ route('proyectos.gestion') }}"
-                            class="{{ request()->routeIs('proyectos.gestion', 'proyectos.crear', 'validaciones.index') ? 'active-sub' : '' }}">Gestión
-                            de proyectos</a>
+                    <a href="{{ route('proyectos.gestion') }}"
+                        class="{{ request()->routeIs('proyectos.gestion', 'proyectos.crear', 'validaciones.index') ? 'active-sub' : '' }}">Gestión
+                        de proyectos</a>
                     @endif
                 </div>
             </li>
 
             @if ($nav['canManageSystemConfig'])
-                <li>
-                    <div class="legacy-menu-item has-submenu">
-                        Configuración
-                        <div class="arrow-icon"></div>
-                    </div>
-                    <div class="legacy-submenu">
-                        <a href="{{ route('profesores-proyecto.index') }}"
-                            class="{{ request()->routeIs('profesores-proyecto.index') ? 'active-sub' : '' }}">Profesores
-                            de proyecto</a>
-                        @if ($nav['canManageCoordinators'])
-                            <a href="{{ route('coordinadores.index') }}"
-                                class="{{ request()->routeIs('coordinadores.index') ? 'active-sub' : '' }}">Coordinadores</a>
-                        @endif
-                    </div>
-                </li>
+            <li>
+                <div class="legacy-menu-item has-submenu">
+                    Configuración
+                    <div class="arrow-icon"></div>
+                </div>
+                <div class="legacy-submenu">
+                    <a href="{{ route('profesores-proyecto.index') }}"
+                        class="{{ request()->routeIs('profesores-proyecto.index') ? 'active-sub' : '' }}">Profesores
+                        de proyecto</a>
+                    @if ($nav['canManageCoordinators'])
+                    <a href="{{ route('coordinadores.index') }}"
+                        class="{{ request()->routeIs('coordinadores.index') ? 'active-sub' : '' }}">Coordinadores</a>
+                    @endif
+                </div>
+            </li>
             @endif
+
+            @if ($nav['canManageOrganizaciones'])
+            <li>
+                <div class="legacy-menu-item has-submenu">
+                    Vinculación
+                    <div class="arrow-icon"></div>
+                </div>
+                <div class="legacy-submenu">
+                    <a href="{{ route('organizaciones.index') }}"
+                        class="{{ request()->routeIs('organizaciones.index') ? 'active-sub' : '' }}">
+                        Gestionar Organizaciones
+                    </a>
+                    <a href="{{ route('roles-sistema.index') }}"
+                        class="{{ request()->routeIs('roles-sistema.index') ? 'active-sub' : '' }}">
+                        Roles del Sistema
+                    </a>
+                </div>
+            </li>
+            @endif
+
+            <li>
+                <div class="legacy-menu-item has-submenu">
+                    Publicaciones
+                    <div class="arrow-icon"></div>
+                </div>
+                <div class="legacy-submenu">
+                    <a href="{{ route('publicaciones.publicar') }}"
+                        class="{{ request()->routeIs('publicaciones.publicar') ? 'active-sub' : '' }}">
+                        Publicar Proyectos
+                    </a>
+                    <a href="{{ route('publicaciones.index') }}"
+                        class="{{ request()->routeIs('publicaciones.index') ? 'active-sub' : '' }}">
+                        Proyectos Publicados
+                    </a>
+                    <a href="{{ route('publicaciones.publico') }}"
+                        class="{{ request()->routeIs('publicaciones.publico') ? 'active-sub' : '' }}">
+                        Vista P&uacute;blica
+                    </a>
+                </div>
+            </li>
 
             <li>
                 <div class="legacy-menu-item has-submenu">
