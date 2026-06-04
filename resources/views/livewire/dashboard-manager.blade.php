@@ -1,13 +1,3 @@
-﻿<?php
-
-use Livewire\Component;
-
-new class extends Component
-{
-    // Vacio para el rediseño legado
-};
-?>
-
 <div style="font-family: Arial, Helvetica, sans-serif; padding: 0;">
     <h2 style="font-size: 23px; font-weight: bold; margin-bottom: 50px; margin-top: -30px; color: #000;">
         @php

@@ -23,11 +23,13 @@ class GrupoProyectoService
 
     public function tablaDisponible(): bool
     {
-        try {
-            return Schema::connection($this->conexionRepositorio())->hasTable('grupo_proyecto_modulo');
-        } catch (\Throwable) {
-            return false;
-        }
+        return \Illuminate\Support\Facades\Cache::remember('grp_tabla_disponible', 3600, function () {
+            try {
+                return Schema::connection($this->conexionRepositorio())->hasTable('grupo_proyecto_modulo');
+            } catch (\Throwable) {
+                return false;
+            }
+        });
     }
 
     public function conexionRepositorio(): string
@@ -116,6 +118,8 @@ class GrupoProyectoService
 
         $idCol = $this->columnaId();
 
+        \Illuminate\Support\Facades\Cache::put('grp_cache_version', time(), now()->addDays(1));
+
         if ($grpCodigo) {
             GrupoProyectoModulo::where($idCol, $grpCodigo)->update($payload);
 
@@ -159,34 +163,39 @@ class GrupoProyectoService
             return collect();
         }
 
-        $query = GrupoProyectoModulo::query();
+        $version = \Illuminate\Support\Facades\Cache::get('grp_cache_version') ?? 1;
+        $cacheKey = 'grp_listar_' . $version . '_' . md5(json_encode($filtros));
 
-        if (!empty($filtros['lapso'])) {
-            $query->where('grp_contexto->lap_codigo', (int) $filtros['lapso']);
-        }
-        if (!empty($filtros['programa'])) {
-            $query->where('grp_contexto->pro_codigo', (int) $filtros['programa']);
-        }
-        if (!empty($filtros['seccion'])) {
-            $query->where('grp_contexto->sec_codigo', (int) $filtros['seccion']);
-        }
-        if (!empty($filtros['trayecto'])) {
-            $query->where('grp_contexto->tra_codigo', (int) $filtros['trayecto']);
-        }
-        if (!empty($filtros['equipo'])) {
-            $query->whereJsonContains('grp_miembros', ['cedula' => $filtros['equipo']]);
-        }
-        if (!empty($filtros['busqueda'])) {
-            $term = '%' . mb_strtolower(trim((string) $filtros['busqueda'])) . '%';
-            $query->whereRaw('LOWER(grp_nombre) LIKE ?', [$term]);
-        }
+        return \Illuminate\Support\Facades\Cache::remember($cacheKey, now()->addMinutes(2), function () use ($filtros) {
+            $query = GrupoProyectoModulo::query();
 
-        $cacheEtiquetas = [];
+            if (!empty($filtros['lapso'])) {
+                $query->where('grp_contexto->lap_codigo', (int) $filtros['lapso']);
+            }
+            if (!empty($filtros['programa'])) {
+                $query->where('grp_contexto->pro_codigo', (int) $filtros['programa']);
+            }
+            if (!empty($filtros['seccion'])) {
+                $query->where('grp_contexto->sec_codigo', (int) $filtros['seccion']);
+            }
+            if (!empty($filtros['trayecto'])) {
+                $query->where('grp_contexto->tra_codigo', (int) $filtros['trayecto']);
+            }
+            if (!empty($filtros['equipo'])) {
+                $query->whereJsonContains('grp_miembros', ['cedula' => $filtros['equipo']]);
+            }
+            if (!empty($filtros['busqueda'])) {
+                $term = '%' . mb_strtolower(trim((string) $filtros['busqueda'])) . '%';
+                $query->whereRaw('LOWER(grp_nombre) LIKE ?', [$term]);
+            }
 
-        return $query->orderByDesc($this->columnaId())
-            ->get()
-            ->map(fn ($r) => $this->enriquecerEtiquetasAcademicas($this->mapearFila($r), $cacheEtiquetas))
-            ->values();
+            $cacheEtiquetas = [];
+
+            return $query->orderByDesc($this->columnaId())
+                ->get()
+                ->map(fn ($r) => $this->enriquecerEtiquetasAcademicas($this->mapearFila($r), $cacheEtiquetas))
+                ->values();
+        });
     }
 
 
@@ -207,6 +216,8 @@ class GrupoProyectoService
         if (! $this->tablaDisponible()) {
             return;
         }
+
+        \Illuminate\Support\Facades\Cache::put('grp_cache_version', time(), now()->addDays(1));
 
         DualDatabase::repositorioTable('grupo_proyecto_modulo')
             ->where($this->columnaId(), $grpCodigo)
@@ -354,11 +365,13 @@ class GrupoProyectoService
 
     protected function columnaId(): string
     {
-        $conn = $this->conexionRepositorio();
+        return \Illuminate\Support\Facades\Cache::remember('grp_columna_id', 3600, function () {
+            $conn = $this->conexionRepositorio();
 
-        return Schema::connection($conn)->hasColumn('grupo_proyecto_modulo', 'grp_codigo')
-            ? 'grp_codigo'
-            : 'gpb_codigo';
+            return Schema::connection($conn)->hasColumn('grupo_proyecto_modulo', 'grp_codigo')
+                ? 'grp_codigo'
+                : 'gpb_codigo';
+        });
     }
 
     /**

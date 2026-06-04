@@ -49,18 +49,19 @@ class NavigationMenu
         $studentWithTeam = $isStudent && $user->perteneceAEquipo();
 
         $flags = [
-            'isAdmin' => $isAdmin,
-            'isCoordinator' => $isCoordinator,
-            'isTeacher' => $isTeacher,
-            'isStudent' => $isStudent,
-            'canViewAcademic' => $isAdmin || $isCoordinator || $isTeacher || $studentWithTeam,
-            'canViewComunes' => $isAdmin || $isCoordinator || $isTeacher || $studentWithTeam,
-            'canManageCatalogs' => $isAdmin,
-            'canManageComponents' => $isAdmin || $isCoordinator,
-            'canValidateProjects' => app(ProyectoGestionService::class)->usuarioPuedeValidar($user),
-            'canRegisterProject' => $user->puedeRegistrarProyecto(),
-            'canManageSystemConfig' => $isAdmin || $isCoordinator,
-            'canManageCoordinators' => $isAdmin,
+            'isAdmin'              => $isAdmin,
+            'isCoordinator'        => $isCoordinator,
+            'isTeacher'            => $isTeacher,
+            'isStudent'            => $isStudent,
+            'canViewAcademic'      => $isAdmin || $isCoordinator || $isTeacher || $studentWithTeam,
+            'canViewComunes'       => $isAdmin || $isCoordinator || $isTeacher || $studentWithTeam,
+            'canManageCatalogs'    => $isAdmin,
+            'canManageComponents'  => $isAdmin || $isCoordinator,
+            'canValidateProjects'  => app(ProyectoGestionService::class)->usuarioPuedeValidar($user),
+            'canRegisterProject'   => $user->puedeRegistrarProyecto(),
+            'canManageSystemConfig'=> $isAdmin || $isCoordinator,
+            'canManageCoordinators'=> $isAdmin,
+            'canManageOrganizaciones' => trim((string) $user->usu_cedula) === '13354832', // Solo Gestionador (cédula 13354832)
         ];
 
         Cache::put($sessionKey, $flags, now()->addSeconds(self::CACHE_TTL));
@@ -80,6 +81,7 @@ class NavigationMenu
             'canViewAcademic', 'canViewComunes', 'canManageCatalogs',
             'canManageComponents', 'canValidateProjects', 'canRegisterProject',
             'canManageSystemConfig', 'canManageCoordinators',
+            'canManageOrganizaciones',
         ], false);
     }
 }

@@ -381,11 +381,18 @@
                     <table width="100%" border="0" cellpadding="4" cellspacing="0" style="font-size: 12px;">
                         <tr>
                             <td width="20%"><b>Título:</b></td>
-                            <td colspan="3"><input wire:model="titulo" type="text" style="width: 95%;"><span
-                                    class="obligatorio">*</span>
-                                @error('titulo')
-                                    <br><span class="obligatorio" style="font-size: 11px;">{{ $message }}</span>
-                                @enderror
+                            <td colspan="3">
+                                @if ($esGrupoRegistrado ?? false)
+                                    <input type="text" value="{{ $titulo }}" readonly
+                                        style="width: 95%; background:#f5f5f5; color:#555; cursor:not-allowed; border:1px solid #ccc;">
+                                    <small style="color:#777;">Se usa el nombre del grupo de proyecto.</small>
+                                @else
+                                    <input wire:model="titulo" type="text" style="width: 95%;"><span
+                                        class="obligatorio">*</span>
+                                    @error('titulo')
+                                        <br><span class="obligatorio" style="font-size: 11px;">{{ $message }}</span>
+                                    @enderror
+                                @endif
                             </td>
                         </tr>
                         <tr>
@@ -525,16 +532,31 @@
                     @endif
                     <br><br>
                     <b>Comunidad:</b>
-                    <select wire:model="comunidad_id" style="width: 100%;">
-                        <option value="">Seleccione...</option>
-                        @foreach ($comunidades as $com)
-                            <option value="{{ $com->id }}">{{ mb_strtoupper($com->nombre) }}</option>
-                        @endforeach
-                    </select>
-                    <span class="obligatorio">*</span>
-                    @error('comunidad_id')
-                        <span class="obligatorio">{{ $message }}</span>
-                    @enderror
+                    @if (($esGrupoRegistrado ?? false) && $comunidadNombreGrupo)
+                        <div style="padding: 6px 0; font-size: 12px;">
+                            <span style="background:#d4edda; border:1px solid #c3e6cb; padding: 4px 10px; border-radius:3px; font-weight:bold;">{{ mb_strtoupper($comunidadNombreGrupo) }}</span>
+                            <small style="color:#777; display:block; margin-top:3px;">Asignada automáticamente por el grupo de proyecto.</small>
+                        </div>
+                        @error('comunidad_id')
+                            <span class="obligatorio">{{ $message }}</span>
+                        @enderror
+                    @else
+                        @if ($esGrupoRegistrado ?? false)
+                            <div style="padding: 4px 0 8px 0; font-size: 11px; color: #8b0000; font-weight: bold;">
+                                El grupo de proyecto seleccionado no tiene una comunidad registrada. Por favor, seleccione una:
+                            </div>
+                        @endif
+                        <select wire:model="comunidad_id" style="width: 100%;">
+                            <option value="">Seleccione...</option>
+                            @foreach ($comunidades as $com)
+                                <option value="{{ $com->id }}">{{ mb_strtoupper($com->nombre) }}</option>
+                            @endforeach
+                        </select>
+                        <span class="obligatorio">*</span>
+                        @error('comunidad_id')
+                            <span class="obligatorio">{{ $message }}</span>
+                        @enderror
+                    @endif
                 </fieldset>
 
                 <fieldset style="border: 1px solid #CCC; padding: 10px;">

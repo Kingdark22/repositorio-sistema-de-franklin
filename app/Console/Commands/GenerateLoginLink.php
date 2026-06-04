@@ -7,8 +7,8 @@ use Illuminate\Support\Facades\DB;
 
 class GenerateLoginLink extends Command
 {
-    protected $signature = 'app:generate-login-link';
-    protected $description = 'Genera un enlace de acceso verificando usuario y contraseña con la BD externa.';
+    protected $signature = 'app:generate-login-link {user? : El usuario o cédula}';
+    protected $description = 'Genera un enlace de acceso directo verificando el usuario/cédula con la BD externa (sin requerir contraseña).';
 
     /**
      * Clave secreta para encriptar el payload del enlace.
@@ -48,20 +48,21 @@ class GenerateLoginLink extends Command
     {
         $this->info('--- Generador de Enlace ---');
         
-        // Usando entrada directa de PHP para asegurar visibilidad total
-        fwrite(STDOUT, "Usuario / Cédula: ");
-        $input = trim(fgets(STDIN));
-        
-        fwrite(STDOUT, "Contraseña: ");
-        $password = trim(fgets(STDIN));
+        $input = $this->argument('user');
 
-        if (empty($input) || empty($password)) {
+        if (empty($input)) {
+            fwrite(STDOUT, "Usuario / Cédula: ");
+            $input = trim(fgets(STDIN));
+        }
+
+        if (empty($input)) {
             $this->error('Incompleto.');
             return 1;
         }
 
         try {
-            $connectionName = \App\Helpers\DbHelper::connection();
+            // Forzar conexión a la intranet (PostgreSQL) — no usar fallback a simulación
+            $connectionName = 'intranet';
 
             $extUser = DB::connection($connectionName)
                 ->table('usuario')
@@ -75,7 +76,7 @@ class GenerateLoginLink extends Command
                 ->first();
 
             if (!$extUser) {
-                $this->error('Usuario no encontrado.');
+                $this->error('Usuario no encontrado en la intranet.');
                 return 1;
             }
 
@@ -86,11 +87,6 @@ class GenerateLoginLink extends Command
             $mirror = app(\App\Services\IntranetSimulationMirrorService::class);
             $mirror->mirrorUserContext($cedula);
             $mirror->mirrorTable('programa');
-
-            if (!password_verify(strtoupper($password), trim($extUser->usu_clave ?? ''))) {
-                $this->error('Contraseña incorrecta.');
-                return 1;
-            }
 
             $nombre = mb_strtoupper(trim($extUser->per_nombres ?? '') . ' ' . trim($extUser->per_apellidos ?? ''));
 

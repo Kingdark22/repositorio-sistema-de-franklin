@@ -1,91 +1,3 @@
-<?php
-
-use App\Models\Proyecto;
-use App\Models\Coordinacion;
-use App\Models\LineaInvestigacion;
-use App\Models\MetodologiaInvestigacion;
-use App\Models\TipoPublicacion;
-use App\Models\TipoInvestigacion;
-use App\Models\LapsoAcademico;
-use Livewire\Component;
-use Livewire\WithPagination;
-
-new class extends Component {
-    use WithPagination;
-
-    public $search = '';
-    public $motivo_rechazo = '';
-    public $selectedProjectId = null;
-    public $selectedProject = null;
-    public $viewMode = 'list';
-
-    public function approve($id)
-    {
-        $proyecto = Proyecto::findOrFail($id);
-        $proyecto->aprobar();
-
-        session()->flash('message', 'Proyecto aprobado con éxito.');
-        $this->dispatch('refresh-icons');
-    }
-
-    public function openRejectModal($id)
-    {
-        $this->selectedProjectId = $id;
-        $this->motivo_rechazo = '';
-        $this->viewMode = 'reject';
-    }
-
-    public function openDetails($id)
-    {
-        $this->selectedProject = Proyecto::with(['tipo_publicacion', 'linea_investigacion', 'metodologia', 'tipo_investigacion', 'comunidad'])->findOrFail($id);
-        $this->viewMode = 'details';
-        $this->dispatch('refresh-icons');
-    }
-
-    public function backToList()
-    {
-        $this->viewMode = 'list';
-        $this->selectedProjectId = null;
-        $this->selectedProject = null;
-        $this->motivo_rechazo = '';
-    }
-
-    public function reject()
-    {
-        $this->validate([
-            'motivo_rechazo' => 'required|min:10',
-        ]);
-
-        $proyecto = Proyecto::findOrFail($this->selectedProjectId);
-        $proyecto->rechazar($this->motivo_rechazo);
-
-        $this->backToList();
-        session()->flash('message', 'Proyecto rechazado.');
-        $this->dispatch('refresh-icons');
-    }
-
-    public function approveFromDetails($id)
-    {
-        $this->approve($id);
-        $this->backToList();
-    }
-
-    public function rejectFromDetails($id)
-    {
-        $this->selectedProjectId = $id;
-        $this->motivo_rechazo = '';
-        $this->viewMode = 'reject';
-    }
-
-    public function with()
-    {
-        return [
-            'proyectos' => Proyecto::pendientes($this->search)->latest()->paginate(10),
-        ];
-    }
-};
-?>
-
 <div>
     <style>
         .cm-btn {
@@ -141,9 +53,8 @@ new class extends Component {
             font-size: 0.85rem;
         }
     </style>
-    <h2 class="titulo" style="margin-bottom: 20px; font-weight: bolder; margin-top: 10px;">Validación de Proyectos</h2>
+    <h2 class="titulo" style="margin-bottom: 20px; font-weight: bolder; margin-top: 10px;">Validaci&oacute;n de Proyectos</h2>
 
-    <!-- Notification -->
     @if (session()->has('message'))
         <div
             style="background-color: #d4edda; color: #155724; padding: 10px; margin-bottom: 15px; border: 1px solid #c3e6cb; border-radius: 4px; font-weight: bold; text-align: center;">
@@ -152,25 +63,23 @@ new class extends Component {
     @endif
 
     @if ($viewMode === 'list')
-        <!-- Search -->
         <div style="margin-bottom: 15px;">
-            <b>Búsqueda (Título):</b>
+            <b>B&uacute;squeda (T&iacute;tulo):</b>
             <input wire:model.live="search" type="text" style="width: 250px;" placeholder="...">
         </div>
 
-        <!-- Data Table -->
         <fieldset style="border: 2px solid #8b0000; border-radius: 6px; padding: 10px; margin: 0;">
-            <legend style="color: #000; font-weight: bold; font-style: italic; padding: 0 5px;">Revisión de Expedientes
+            <legend style="color: #000; font-weight: bold; font-style: italic; padding: 0 5px;">Revisi&oacute;n de Expedientes
                 Pendientes</legend>
 
             <table width="100%" border="1" cellpadding="4" cellspacing="0"
                 style="border-collapse: collapse; border-color: #bbbbbb; font-size: 11px; margin-top: 5px;">
                 <thead>
                     <tr style="background-color: #8bb2b7; color: #000; text-align: center; font-weight: bold;">
-                        <th padding="5" width="35%">Título del Proyecto / Resumen</th>
-                        <th padding="5" width="25%">Lapso / Coordinación</th>
+                        <th padding="5" width="35%">T&iacute;tulo del Proyecto / Resumen</th>
+                        <th padding="5" width="25%">Lapso / Coordinaci&oacute;n</th>
                         <th padding="5" width="15%">Documento</th>
-                        <th padding="5" width="25%">Acciones de Validación</th>
+                        <th padding="5" width="25%">Acciones de Validaci&oacute;n</th>
                     </tr>
                 </thead>
                 <tbody class="Texto">
@@ -188,7 +97,7 @@ new class extends Component {
                             <td align="center" style="padding: 5px;">
                                 {{ $p->lapso_academico->nombre }}
                                 @if ($p->coordinacion)
-                                    <br><span style="font-size: 10px; font-weight: bold;">Coordinación:
+                                    <br><span style="font-size: 10px; font-weight: bold;">Coordinaci&oacute;n:
                                         {{ $p->coordinacion->nombre }}</span>
                                 @endif
                             </td>
@@ -204,12 +113,12 @@ new class extends Component {
                                 <a href="#" wire:click.prevent="openDetails({{ $p->id }})"
                                     title="Ver Detalles"
                                     style="color: #0000EE; text-decoration: none; display: inline-block;">
-                                    [Ver Ficha Técnica]
+                                    [Ver Ficha T&eacute;cnica]
                                 </a>
                             </td>
                             <td align="center" style="padding: 5px;">
                                 <button type="button" wire:click="approve({{ $p->id }})"
-                                    onclick="return confirm('¿Confirma que el documento es válido y aprueba el proyecto?')"
+                                    onclick="return confirm('&iquest;Confirma que el documento es v&aacute;lido y aprueba el proyecto?')"
                                     class="cm-btn cm-btn-success cm-btn-sm"
                                     style="display: block; width: 90%; margin: 0 auto 5px auto; font-size: 10px;">
                                     Aprobar / Confirmar
@@ -226,7 +135,7 @@ new class extends Component {
                         <tr>
                             <td colspan="5" align="center"
                                 style="padding: 20px; font-weight: bold; background-color: #FFFFFF;">
-                                Bandeja vacía. No hay expedientes pendientes de revisión.
+                                Bandeja vac&iacute;a. No hay expedientes pendientes de revisi&oacute;n.
                             </td>
                         </tr>
                     @endif
@@ -238,13 +147,12 @@ new class extends Component {
             </div>
         </fieldset>
     @elseif($viewMode === 'reject')
-        <!-- Rechazar Proyecto -->
         <fieldset style="border: 2px solid #8b0000; border-radius: 6px; padding: 20px; background-color: #FFF;">
             <legend style="color: #000; font-weight: bold; font-style: italic; padding: 0 5px;">Indicar Motivo de
                 Rechazo</legend>
 
             <div style="margin-bottom: 15px; font-size: 12px;">
-                Por favor, detalle la justificación para no aprobar el expediente:
+                Por favor, detalle la justificaci&oacute;n para no aprobar el expediente:
             </div>
 
             <div style="text-align: left;">
@@ -261,9 +169,8 @@ new class extends Component {
             </div>
         </fieldset>
     @elseif($viewMode === 'details' && $selectedProject)
-        <!-- Ficha Técnica -->
         <fieldset style="border: 2px solid #8b0000; border-radius: 6px; padding: 20px; background-color: #FFF;">
-            <legend style="color: #000; font-weight: bold; font-style: italic; padding: 0 5px;">Ficha Técnica del
+            <legend style="color: #000; font-weight: bold; font-style: italic; padding: 0 5px;">Ficha T&eacute;cnica del
                 Proyecto</legend>
 
             <div
@@ -293,29 +200,29 @@ new class extends Component {
                         <fieldset style="border: 1px solid #CCC; padding: 10px; height: 100%;">
                             <legend
                                 style="font-weight: bold; font-size: 12px; padding: 0 5px; background-color: #f0f0f0;">
-                                Detalles de Investigación</legend>
+                                Detalles de Investigaci&oacute;n</legend>
                             <table width="100%" border="0" cellpadding="4" cellspacing="0"
                                 style="font-size: 11px;">
                                 <tr>
-                                    <td width="35%"><b>Publicación:</b></td>
+                                    <td width="35%"><b>Publicaci&oacute;n:</b></td>
                                     <td width="65%">{{ $selectedProject->tipo_publicacion->nombre }}</td>
                                 </tr>
                                 <tr>
-                                    <td><b>Investigación:</b></td>
+                                    <td><b>Investigaci&oacute;n:</b></td>
                                     <td>{{ $selectedProject->tipo_investigacion->nombre }}</td>
                                 </tr>
                                 <tr>
-                                    <td><b>Metodología:</b></td>
+                                    <td><b>Metodolog&iacute;a:</b></td>
                                     <td>{{ $selectedProject->metodologia->nombre }}</td>
                                 </tr>
                                 @if ($selectedProject->coordinacion)
                                     <tr>
-                                        <td><b>Coordinación:</b></td>
+                                        <td><b>Coordinaci&oacute;n:</b></td>
                                         <td>{{ $selectedProject->coordinacion->nombre }}</td>
                                     </tr>
                                 @endif
                                 <tr>
-                                    <td><b>Línea de Inv.:</b></td>
+                                    <td><b>L&iacute;nea de Inv.:</b></td>
                                     <td>{{ $selectedProject->linea_investigacion->nombre_investigacion }}</td>
                                 </tr>
                             </table>
@@ -326,13 +233,13 @@ new class extends Component {
 
             <div style="text-align: center; margin-top: 20px; border-top: 1px solid #CCC; padding-top: 15px;">
                 <button type="button" wire:click="approveFromDetails({{ $selectedProject->id }})"
-                    onclick="return confirm('¿Confirma que aprueba el proyecto?')" class="cm-btn cm-btn-success"
+                    onclick="return confirm('&iquest;Confirma que aprueba el proyecto?')" class="cm-btn cm-btn-success"
                     style="margin-right: 15px;">
                     Aprobar Proyecto Ahora
                 </button>
                 <button type="button" wire:click="rejectFromDetails({{ $selectedProject->id }})"
                     class="cm-btn cm-btn-danger" style="margin-right: 15px;">
-                    Rechazar Revisión
+                    Rechazar Revisi&oacute;n
                 </button>
                 <button type="button" wire:click="backToList" class="cm-btn cm-btn-secondary">
                     Regresar al Listado

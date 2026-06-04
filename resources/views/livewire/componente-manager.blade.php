@@ -1,228 +1,3 @@
-<?php
-
-use App\Models\Componente;
-use App\Models\Coordinacion;
-use App\Services\IntranetEquipoSeccionService;
-use Illuminate\Support\Collection;
-use Livewire\Component;
-use Livewire\WithPagination;
-
-new class extends Component {
-    use WithPagination;
-
-    public $search = '';
-    public $filterPrograma = '';
-    public $filterTrayecto = '';
-    public $viewMode = 'list';
-    public $editingId = null;
-
-    public $coordinacion_id = '';
-    public $anio = '';
-
-    public Collection $trayectosPrograma;
-
-    public function mount()
-    {
-        $this->trayectosPrograma = collect();
-    }
-
-    // For editing or single mode
-    public $nombre = '';
-    public $es_obligatorio = true;
-
-    // For multiple addition
-    public $rows = [];
-
-    protected function rules()
-    {
-        if ($this->editingId) {
-            return [
-                'nombre' => 'required|min:3',
-                'coordinacion_id' => 'required',
-                'anio' => 'required|string',
-                'es_obligatorio' => 'boolean',
-            ];
-        }
-
-        return [
-            'coordinacion_id' => 'required',
-            'anio' => 'required|string',
-            'rows.*.nombre' => 'required|min:3',
-            'rows.*.es_obligatorio' => 'boolean',
-        ];
-    }
-
-    protected $messages = [
-        'nombre.required' => 'Debe nombrar el documento.',
-        'rows.*.nombre.required' => 'Debe nombrar el documento en esta fila.',
-        'coordinacion_id.required' => 'Debe asignar una PNF / Coordinación rectora.',
-        'anio.required' => 'Debe asignarle el trayecto (I, II, III, IV).',
-    ];
-
-    public function updatingSearch()
-    {
-        $this->resetPage();
-    }
-
-    public function updatingFilterPrograma()
-    {
-        $this->resetPage();
-    }
-
-    public function updatingFilterTrayecto()
-    {
-        $this->resetPage();
-    }
-
-    public function updatedCoordinacionId($value)
-    {
-        $this->anio = '';
-        $this->loadTrayectosPrograma();
-    }
-
-    protected function loadTrayectosPrograma()
-    {
-        if ($this->coordinacion_id === '') {
-            $this->trayectosPrograma = collect();
-
-            return;
-        }
-
-        $this->trayectosPrograma = app(IntranetEquipoSeccionService::class)
-            ->trayectosEnLapso(null, (int) $this->coordinacion_id);
-    }
-
-    public function create()
-    {
-        $this->resetValidation();
-        $this->resetFields();
-
-        $this->loadTrayectosPrograma();
-        $this->rows = [['nombre' => '', 'es_obligatorio' => true]];
-
-        $this->viewMode = 'form';
-    }
-
-    public function addRow()
-    {
-        $this->rows[] = ['nombre' => '', 'es_obligatorio' => true];
-    }
-
-    public function removeRow($index)
-    {
-        if (count($this->rows) > 1) {
-            unset($this->rows[$index]);
-            $this->rows = array_values($this->rows);
-        }
-    }
-
-    public function edit($id)
-    {
-        $this->resetValidation();
-        $this->editingId = $id;
-        $comp = Componente::findOrFail($id);
-
-        $this->nombre = $comp->nombre;
-        $this->coordinacion_id = $comp->coordinacion_id;
-        $this->anio = $comp->anio;
-        $this->es_obligatorio = $comp->es_obligatorio;
-
-        $this->loadTrayectosPrograma();
-        $this->viewMode = 'form';
-    }
-
-    public function cancel()
-    {
-        $this->resetFields();
-        $this->viewMode = 'list';
-    }
-
-    public function resetFields()
-    {
-        $this->editingId = null;
-        $this->nombre = '';
-        $this->coordinacion_id = '';
-        $this->anio = '';
-        $this->es_obligatorio = true;
-        $this->rows = [];
-    }
-
-    public function save()
-    {
-        $this->validate();
-
-        if ($this->editingId) {
-            Componente::guardar(
-                [
-                    'nombre' => $this->nombre,
-                    'coordinacion_id' => $this->coordinacion_id,
-                    'anio' => $this->anio,
-                    'es_obligatorio' => $this->es_obligatorio,
-                ],
-                $this->editingId,
-            );
-            session()->flash('message', 'Componente documental actualizado.');
-        } else {
-            Componente::guardarMuchos($this->rows, $this->coordinacion_id, $this->anio);
-            session()->flash('message', count($this->rows) . ' Componentes creados con éxito.');
-        }
-
-        $this->viewMode = 'list';
-        $this->dispatch('refresh-icons');
-    }
-
-    public function toggleStatus($id)
-    {
-        $item = Componente::findOrFail($id);
-        $item->alternarEstado();
-        session()->flash('message', 'Estado lógico del componente actualizado.');
-        $this->dispatch('refresh-icons');
-    }
-
-    public function delete($id)
-    {
-        $item = Componente::findOrFail($id);
-        $item->borrar();
-        session()->flash('message', 'Regla de componente eliminada de la base de datos.');
-        $this->dispatch('refresh-icons');
-    }
-
-    public function with()
-    {
-        $query = Componente::query();
-
-        if ($this->search !== '') {
-            $query->where(function ($q) {
-                $q->where('nombre', 'like', "%{$this->search}%")
-                  ->orWhere('anio', 'like', "%{$this->search}%");
-            });
-        }
-
-        if ($this->filterPrograma !== '') {
-            $query->where('coordinacion_id', $this->filterPrograma);
-        }
-
-        if ($this->filterTrayecto !== '') {
-            $query->where('anio', $this->filterTrayecto);
-        }
-
-        $trayectosDb = \App\Models\Trayecto::on(\App\Helpers\DbHelper::connection())
-            ->whereNotNull('tra_nombre')
-            ->orderBy('tra_nombre')
-            ->pluck('tra_nombre')
-            ->unique()
-            ->values()
-            ->toArray();
-
-        return [
-            'listaRegistros' => $query->latest()->paginate(10),
-            'programas' => app(\App\Services\AcademicCatalog::class)->programasForSelect(),
-            'trayectos' => $trayectosDb ?: ['I', 'II', 'III', 'IV', 'V', 'VI'],
-        ];
-    }
-};
-?>
-
 <div>
     <style>
         .cm-btn {
@@ -286,7 +61,7 @@ new class extends Component {
         }
     </style>
 
-    <h2 class="titulo" style="margin-bottom: 20px; font-weight: bolder; margin-top: 10px;">Gestión de Componentes</h2>
+    <h2 class="titulo" style="margin-bottom: 20px; font-weight: bolder; margin-top: 10px;">Gesti&oacute;n de Componentes</h2>
 
     @if (session()->has('message'))
         <div
@@ -312,7 +87,7 @@ new class extends Component {
             <div style="display: flex; align-items: center; gap: 4px;">
                 <b>Buscar:</b>
                 <input wire:model.live.debounce.300ms="search" type="text" style="width: 400px; padding: 4px 6px; border-radius: 4px; border: 1px solid #999;"
-                    placeholder="Componente o año...">
+                    placeholder="Componente o a&ntilde;o...">
             </div>
             <span style="margin-left: auto;"></span>
             <button wire:click="create" class="cm-btn cm-btn-success" style="font-size: 13px; padding: 6px 14px;">
@@ -327,9 +102,9 @@ new class extends Component {
                 style="border-collapse: collapse; border-color: #bbbbbb; font-size: 11px; margin-top: 5px;">
                 <thead>
                     <tr style="background-color: #8bb2b7; color: #000; font-weight: bold;">
-                        <th width="5%">N°</th>
+                        <th width="5%">N&deg;</th>
                         <th width="35%">Nombre del Documento Exigido</th>
-                        <th width="30%">Coordinación Asociada y Trayecto/Año</th>
+                        <th width="30%">Coordinaci&oacute;n Asociada y Trayecto/A&ntilde;o</th>
                         <th width="10%">Obligatorio</th>
                         <th width="10%">Estatus</th>
                         <th width="10%">Configurar</th>
@@ -344,11 +119,11 @@ new class extends Component {
                                 {{ mb_strtoupper($item->nombre) }}</td>
                             <td align="center" style="font-weight: bold; font-style: italic; padding: 8px;">
                                 {{ $item->nombre_coordinacion }} <br>
-                                <span style="color: #8b0000;">Trayecto/Año: {{ mb_strtoupper($item->anio) }}</span>
+                                <span style="color: #8b0000;">Trayecto/A&ntilde;o: {{ mb_strtoupper($item->anio) }}</span>
                             </td>
                             <td align="center">
                                 {!! $item->es_obligatorio
-                                    ? '<span style="color: #FF0000; font-weight:bold;">SÍ</span>'
+                                    ? '<span style="color: #FF0000; font-weight:bold;">S&Iacute;</span>'
                                     : '<span style="color: #008000; font-weight:bold;">NO</span>' !!}
                             </td>
                             <td align="center">
@@ -371,7 +146,7 @@ new class extends Component {
                                         {{ $item->estado_logico ? 'Suspender' : 'Publicar' }}
                                     </button>
                                     <button type="button" wire:click.prevent="delete({{ $item->id }})"
-                                        wire:confirm="¿Seguro desea eliminar esta regla? Desaparecerán solicitudes antiguas para este documento."
+                                        wire:confirm="&iquest;Seguro desea eliminar esta regla? Desaparecer&aacute;n solicitudes antiguas para este documento."
                                         title="Eliminar Base" class="cm-btn cm-btn-danger cm-btn-sm">
                                         Borrar
                                     </button>
@@ -392,7 +167,6 @@ new class extends Component {
             <div style="margin-top: 10px;">{{ $listaRegistros->links() }}</div>
         </fieldset>
     @else
-        <!-- Formulario (Modo Form) -->
         <fieldset style="border: 2px solid #8b0000; border-radius: 6px; padding: 20px; background-color: #FFF;">
             <legend style="color: #000; font-weight: bold; font-style: italic; padding: 0 5px;">
                 {{ $editingId ? 'Editar Directriz de Componente' : 'Registrar Exigencias de Proyecto' }}
@@ -404,7 +178,7 @@ new class extends Component {
                         <td width="70%">
                             @if (auth()->user()->hasRole('administrador'))
                                 <select wire:model.live="coordinacion_id" style="width: 80%; padding: 4px;">
-                                    <option value="">Seleccione a quién pertenece esta regla...</option>
+                                    <option value="">Seleccione a qui&eacute;n pertenece esta regla...</option>
                                     @foreach ($programas as $p)
                                         <option value="{{ $p->id }}">{{ $p->siglas }} -
                                             {{ $p->nombre }}</option>
@@ -413,7 +187,7 @@ new class extends Component {
                             @else
                                 <div
                                     style="padding: 4px 8px; background-color: #f5f5f5; border: 1px solid #ddd; width: 80%; font-weight:bold; color: #555;">
-                                    {{ \App\Models\Coordinacion::find($coordinacion_id)?->nombre ?? '[COORDINACIÓN AUTOASIGNADA]' }}
+                                    {{ \App\Models\Coordinacion::find($coordinacion_id)?->nombre ?? '[COORDINACI&Oacute;N AUTOASIGNADA]' }}
                                 </div>
                             @endif
                             @error('coordinacion_id')
@@ -422,7 +196,7 @@ new class extends Component {
                         </td>
                     </tr>
                     <tr>
-                        <td width="30%"><b>Aplica a los de Trayecto/Año:</b></td>
+                        <td width="30%"><b>Aplica a los de Trayecto/A&ntilde;o:</b></td>
                         <td width="70%">
                             <select wire:model="anio" style="width: 30%; padding: 4px;">
                                 <option value="">Seleccione trayecto...</option>
@@ -444,61 +218,46 @@ new class extends Component {
                             <tr>
                                 <th>Nombre del Componente</th>
                                 <th width="15%">Obligatorio</th>
-                                @if (!$editingId)
-                                    <th width="10%">Acción</th>
-                                @endif
+                                <th width="10%">Acci&oacute;n</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @if ($editingId)
+                            @foreach ($rows as $index => $row)
                                 <tr>
                                     <td>
-                                        <input type="text" wire:model="nombre" style="width: 95%; padding: 4px;"
+                                        <input type="text" wire:model="rows.{{ $index }}.nombre"
+                                            style="width: 95%; padding: 4px;"
                                             placeholder="Ej: Trabajo Escrito...">
-                                        @error('nombre')
+                                        @error("rows.$index.nombre")
                                             <br><span style="color:red; font-size:10px;">{{ $message }}</span>
                                         @enderror
                                     </td>
                                     <td align="center">
-                                        <input type="checkbox" wire:model="es_obligatorio">
+                                        <input type="checkbox"
+                                            wire:model="rows.{{ $index }}.es_obligatorio">
                                     </td>
-                                </tr>
-                            @else
-                                @foreach ($rows as $index => $row)
-                                    <tr>
-                                        <td>
-                                            <input type="text" wire:model="rows.{{ $index }}.nombre"
-                                                style="width: 95%; padding: 4px;"
-                                                placeholder="Ej: Trabajo Escrito...">
-                                            @error("rows.$index.nombre")
-                                                <br><span style="color:red; font-size:10px;">{{ $message }}</span>
-                                            @enderror
-                                        </td>
-                                        <td align="center">
-                                            <input type="checkbox"
-                                                wire:model="rows.{{ $index }}.es_obligatorio">
-                                        </td>
-                                        <td align="center">
-                                            @if (count($rows) > 1)
+                                    <td align="center">
+                                        @if (empty($row['id']))
+                                            @if (!$editingId || count($rows) > 1)
                                                 <button type="button" wire:click="removeRow({{ $index }})"
                                                     class="cm-btn cm-btn-danger cm-btn-sm">
                                                     Quitar
                                                 </button>
                                             @endif
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            @endif
+                                        @else
+                                            <span style="font-size: 10px; color: #666; font-weight: bold;">(Original)</span>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @endforeach
                         </tbody>
                     </table>
 
-                    @if (!$editingId)
-                        <div style="margin-top: 10px;">
-                            <button type="button" wire:click="addRow()" class="cm-btn cm-btn-success cm-btn-sm">
-                                Agregar otro componente
-                            </button>
-                        </div>
-                    @endif
+                    <div style="margin-top: 10px;">
+                        <button type="button" wire:click="addRow()" class="cm-btn cm-btn-success cm-btn-sm">
+                            Agregar otro componente
+                        </button>
+                    </div>
                 </div>
 
                 <div style="text-align: center; margin-top: 30px;">

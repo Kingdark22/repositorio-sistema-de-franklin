@@ -20,7 +20,12 @@ Route::get('/login', function (\Illuminate\Http\Request $request) {
         return app(MagicLoginController::class)->login($request);
     }
 
-    return view('auth.access-info');
+    // Si ya está autenticado, redirigir al dashboard
+    if (\Illuminate\Support\Facades\Auth::check()) {
+        return redirect()->route('dashboard');
+    }
+
+    return view('auth.login');
 })->name('login');
 
 Route::middleware('auth')->group(function () {
@@ -53,6 +58,12 @@ Route::middleware(['auth', 'active.role'])->group(function () {
 
     Route::middleware('role:administrador')->group(function () {
         Route::view('/configuracion/coordinadores', 'configuracion.coordinadores')->name('coordinadores.index');
+
+        // Módulo Organizaciones (solo Gestionador)
+        Route::view('/organizaciones', 'organizaciones.index')->name('organizaciones.index');
+
+        // Módulo Gestión de Roles del Sistema (solo Gestionador)
+        Route::view('/gestion-roles', 'roles_sistema.index')->name('roles-sistema.index');
     });
 
     Route::middleware('role:administrador,estudiante')->group(function () {
@@ -73,6 +84,9 @@ Route::middleware(['auth', 'active.role'])->group(function () {
         Route::view('/proyectos/gestion', 'proyectos.index')->name('proyectos.gestion');
     });
 
+    Route::view('/publicaciones/publicar', 'publicaciones.publicar')->name('publicaciones.publicar');
+    Route::view('/publicaciones', 'publicaciones.index')->name('publicaciones.index');
+
     Route::get('/proyectos/crear', function () {
         return redirect()->route('proyectos.gestion', request()->query());
     })->middleware('role:administrador,estudiante,coordinador,profesor proyecto')->name('proyectos.crear');
@@ -86,6 +100,9 @@ Route::middleware(['auth', 'active.role'])->group(function () {
         Route::view('/configuracion/componentes', 'componentes.index')->name('componentes.index');
     });
 });
+
+// Público: proyectos publicados visibles sin autenticación
+Route::get('/publicaciones/publico', \App\Livewire\ProyectosPublicosManager::class)->name('publicaciones.publico');
 
 Route::post('/logout', function () {
     Auth::logout();

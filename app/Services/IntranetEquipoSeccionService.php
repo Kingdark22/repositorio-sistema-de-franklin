@@ -404,7 +404,11 @@ class IntranetEquipoSeccionService
 
     public function seccionesEnLapso(?int $lapCodigo, ?int $programaCodigo = null): Collection
     {
-        $cacheKey = 'equipos_secciones_'.($lapCodigo ?? '0').'_'.($programaCodigo ?? '0').'_'.DbHelper::connection();
+        if ($lapCodigo === null) {
+            return collect();
+        }
+
+        $cacheKey = 'equipos_secciones_'.$lapCodigo.'_'.($programaCodigo ?? '0').'_'.DbHelper::connection();
 
         return Cache::remember($cacheKey, now()->addMinutes(30), function () use ($lapCodigo, $programaCodigo) {
             try {
@@ -413,11 +417,8 @@ class IntranetEquipoSeccionService
                     ->table('seccion as sec')
                     ->leftJoin('malla as mal', 'mal.mal_codigo', '=', 'sec.sec_cod_malla')
                     ->leftJoin('programa as pro', 'pro.pro_codigo', '=', 'mal.mal_cod_programa')
+                    ->where('sec.sec_cod_lapso_academico', $lapCodigo)
                     ->select(['sec.sec_codigo', 'sec.sec_nombre', 'pro.pro_siglas']);
-
-                if ($lapCodigo !== null) {
-                    $query->where('sec.sec_cod_lapso_academico', $lapCodigo);
-                }
 
                 $query->leftJoin('trayecto as tra', 'tra.tra_codigo', '=', 'mal.mal_cod_trayecto')
                     ->addSelect('tra.tra_nombre');

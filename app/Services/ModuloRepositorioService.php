@@ -27,7 +27,9 @@ class ModuloRepositorioService
 
     public function tablaExiste(string $tabla): bool
     {
-        return DualDatabase::hasTable($this->conexion(), $tabla);
+        return Cache::remember('tabla_existe_'.$tabla, 3600, function () use ($tabla) {
+            return DualDatabase::hasTable($this->conexion(), $tabla);
+        });
     }
 
     public function esTablaModulo(string $tabla): bool

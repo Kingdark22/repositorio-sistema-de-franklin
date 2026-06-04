@@ -18,7 +18,7 @@ class DbHelper
 
     protected static ?int $intranetPort = null;
 
-    protected const CACHE_TTL = 60;
+    protected const CACHE_TTL = 300;
 
     protected const CACHE_KEY = 'dbhelper_intranet_available';
 
@@ -48,7 +48,7 @@ class DbHelper
         if (self::intranetAlcanzable()) {
             try {
                 $pdo = DB::connection('intranet')->getPdo();
-                $pdo->exec('SET statement_timeout = 5000');
+                $pdo->exec('SET statement_timeout = 2000');
                 $pdo->query('SELECT 1')->fetch();
                 self::$connectionName = 'intranet';
                 self::$usingIntranet = true;

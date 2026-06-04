@@ -3,53 +3,56 @@
 namespace App\Livewire;
 
 use App\Models\Proyecto;
+use App\Services\GrupoProyectoService;
 use App\Services\IntranetEquipoSeccionService;
 use App\Services\ProyectoGestionService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Livewire\WithPagination;
+use Livewire\Attributes\Lazy;
 
+#[Lazy]
 class ProyectoManager extends Component
 {
     use WithFileUploads;
     use WithPagination;
 
-    public string $listTab = 'gestion';
+    public ?string $listTab = 'gestion';
 
-    public string $titulo = '';
+    public ?string $titulo = '';
 
-    public string $resumen = '';
+    public ?string $resumen = '';
 
-    public string $fecha_subida = '';
+    public ?string $fecha_subida = '';
 
     public bool $asignacion_ct = false;
 
-    public string $calificacion = '';
+    public ?string $calificacion = '';
 
-    public string $fecha_aprobacion = '';
+    public ?string $fecha_aprobacion = '';
 
-    public string $linea_investigacion_id = '';
+    public ?string $linea_investigacion_id = '';
 
-    public string $metodologia_id = '';
+    public ?string $metodologia_id = '';
 
-    public string $tipo_publicacion_id = '';
+    public ?string $tipo_publicacion_id = '';
 
-    public string $tipo_investigacion_id = '';
+    public ?string $tipo_investigacion_id = '';
 
-    public string $comunidad_id = '';
+    public ?string $comunidad_id = '';
 
-    public string $equipo_seccion_clave = '';
+    public ?string $equipo_seccion_clave = '';
 
-    public string $filterLapsoEquipo = '';
+    public ?string $filterLapsoEquipo = '';
 
-    public string $filterProgramaEquipo = '';
+    public ?string $filterProgramaEquipo = '';
 
-    public string $filterSeccionEquipo = '';
+    public ?string $filterSeccionEquipo = '';
 
-    public string $filterEstadoList = '';
+    public ?string $filterEstadoList = '';
 
-    public string $filterComunidadList = '';
+    public ?string $filterComunidadList = '';
 
     public array $archivos_componentes = [];
 
@@ -57,11 +60,11 @@ class ProyectoManager extends Component
 
     public $archivo_proyecto = null;
 
-    public string $archivo_actual = '';
+    public ?string $archivo_actual = '';
 
-    public string $search = '';
+    public ?string $search = '';
 
-    public string $motivo_rechazo = '';
+    public ?string $motivo_rechazo = '';
 
     public ?int $editingId = null;
 
@@ -70,6 +73,36 @@ class ProyectoManager extends Component
     public ?Proyecto $selectedProject = null;
 
     public string $viewMode = 'list';
+
+    /** True cuando el equipo seleccionado es un grupo de proyecto registrado (EQGRP:) */
+    public bool $esGrupoRegistrado = false;
+
+    /** Nombre de la comunidad vinculada al grupo (solo lectura) */
+    public ?string $comunidadNombreGrupo = null;
+
+    public function placeholder()
+    {
+        return <<<'HTML'
+        <div class="p-6 w-full bg-white rounded-lg shadow-sm border border-slate-100 dark:bg-slate-900 dark:border-slate-800">
+            <div class="animate-pulse space-y-6">
+                <div class="flex justify-between items-center font-semibold">
+                    <div class="h-6 bg-slate-200 dark:bg-slate-700 rounded w-1/3"></div>
+                    <div class="h-10 bg-slate-200 dark:bg-slate-700 rounded w-40"></div>
+                </div>
+                <div class="grid grid-cols-4 gap-4">
+                    <div class="h-8 bg-slate-100 dark:bg-slate-800 rounded col-span-1"></div>
+                    <div class="h-8 bg-slate-100 dark:bg-slate-800 rounded col-span-1"></div>
+                    <div class="h-8 bg-slate-100 dark:bg-slate-800 rounded col-span-2"></div>
+                </div>
+                <div class="space-y-3">
+                    <div class="h-20 bg-slate-50 dark:bg-slate-800/50 rounded w-full"></div>
+                    <div class="h-20 bg-slate-50 dark:bg-slate-800/50 rounded w-full"></div>
+                    <div class="h-20 bg-slate-50 dark:bg-slate-800/50 rounded w-full"></div>
+                </div>
+            </div>
+        </div>
+        HTML;
+    }
 
     public function mount(ProyectoGestionService $gestion): void
     {
@@ -157,9 +190,42 @@ class ProyectoManager extends Component
         $this->iniciarRegistro();
     }
 
-    public function updatedEquipoSeccionClave(IntranetEquipoSeccionService $equipos): void
+    public function updatedEquipoSeccionClave(GrupoProyectoService $grupos, IntranetEquipoSeccionService $equipos): void
     {
-        $partes = $equipos->parsearClave($this->equipo_seccion_clave);
+        $clave = $this->equipo_seccion_clave ?? '';
+
+        // Si se selecciona un grupo de proyecto registrado (EQGRP:)
+        if (str_starts_with($clave, GrupoProyectoService::PREFIJO . ':')) {
+            $grupo = $grupos->obtenerPorClave($clave);
+            if ($grupo) {
+                $this->esGrupoRegistrado = true;
+                // Auto-rellenar título con el nombre del grupo
+                $this->titulo = $grupo->nombre ?? '';
+                // Auto-rellenar comunidad con la comunidad registrada del grupo
+                if (!empty($grupo->com_codigo)) {
+                    $this->comunidad_id = (string) $grupo->com_codigo;
+                    // Buscar el nombre de la comunidad para mostrarlo en la vista
+                    $comunidad = \App\Models\Comunidad::find($grupo->com_codigo);
+                    $this->comunidadNombreGrupo = $comunidad?->nombre;
+                } else {
+                    $this->comunidad_id = '';
+                    $this->comunidadNombreGrupo = null;
+                }
+                // Actualizar lapso si se puede extraer del grupo
+                if (!empty($grupo->lap_codigo)) {
+                    $this->filterLapsoEquipo = (string) $grupo->lap_codigo;
+                }
+                return;
+            }
+        }
+
+        // Es una sección de intranet o se limpió la selección
+        $this->esGrupoRegistrado = false;
+        $this->comunidadNombreGrupo = null;
+        $this->titulo = '';
+        $this->comunidad_id = '';
+
+        $partes = $equipos->parsearClave($clave);
         if ($partes) {
             $this->filterLapsoEquipo = (string) $partes['lap_codigo'];
         }
@@ -207,11 +273,29 @@ class ProyectoManager extends Component
         }
     }
 
-    public function edit(int $id, ProyectoGestionService $gestion): void
+    public function edit(int $id, ProyectoGestionService $gestion, GrupoProyectoService $grupos): void
     {
         $this->resetFormulario();
         $this->fill($gestion->cargarParaEdicion($id));
         $this->viewMode = 'form';
+
+        // Reconstruir estado de grupo si el equipo seleccionado es un grupo de proyecto
+        $clave = $this->equipo_seccion_clave ?? '';
+        if (str_starts_with($clave, GrupoProyectoService::PREFIJO . ':')) {
+            $grupo = $grupos->obtenerPorClave($clave);
+            if ($grupo) {
+                $this->esGrupoRegistrado = true;
+                $this->titulo = $grupo->nombre ?? $this->titulo;
+                if (!empty($grupo->com_codigo)) {
+                    $comunidad = \App\Models\Comunidad::find($grupo->com_codigo);
+                    $this->comunidadNombreGrupo = $comunidad?->nombre;
+                    // Si no tiene comunidad_id asignado, auto-rellenar
+                    if (empty($this->comunidad_id)) {
+                        $this->comunidad_id = (string) $grupo->com_codigo;
+                    }
+                }
+            }
+        }
     }
 
     public function cancel(): void
@@ -367,6 +451,8 @@ class ProyectoManager extends Component
         $this->archivo_proyecto = null;
         $this->archivo_actual = '';
         $this->editingId = null;
+        $this->esGrupoRegistrado = false;
+        $this->comunidadNombreGrupo = null;
     }
 
     protected function estadoFormulario(): array

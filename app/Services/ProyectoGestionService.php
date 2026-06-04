@@ -35,9 +35,11 @@ class ProyectoGestionService
 
     public function usaComponentesDocumentales(): bool
     {
-        $schema = Schema::connection($this->conexionRepositorio());
+        return Cache::remember('pry_usa_componentes', 3600, function () {
+            $schema = Schema::connection($this->conexionRepositorio());
 
-        return $schema->hasTable('componentes') && $schema->hasColumn('proyectos', 'pry_documentos');
+            return $schema->hasTable('componentes') && $schema->hasColumn('proyectos', 'pry_documentos');
+        });
     }
 
     /**
@@ -236,7 +238,7 @@ class ProyectoGestionService
             'equipo_seccion_clave' => $item->equipo_ref ?? '',
             'filterLapsoEquipo' => $partes ? (string) $partes['lap_codigo'] : '',
             'archivos_actuales' => $archivos,
-            'archivo_actual' => $item->archivo_path,
+            'archivo_actual' => $item->archivo_path ?? '',
         ];
     }
 

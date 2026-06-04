@@ -8,22 +8,24 @@ return [
     |--------------------------------------------------------------------------
     */
     'labels' => [
-        'administrador' => 'Administrador',
-        'estudiante' => 'Estudiante',
+        'administrador'   => 'Administrador',
+        'estudiante'      => 'Estudiante',
         'profesor proyecto' => 'Docente',
-        'coordinador' => 'Coordinación',
+        'coordinador'     => 'Coordinación',
+        'negocio'         => 'Negocio',
     ],
 
     /*
     |--------------------------------------------------------------------------
-    | Botones del módulo "Acceso por Rol" (clave UI => rol interno)
+    | Botones del módulo "Acceso por Rol"
     |--------------------------------------------------------------------------
     */
     'module_buttons' => [
-        'estudiante' => ['slug' => 'estudiante', 'label' => 'Estudiante'],
-        'administrador' => ['slug' => 'administrador', 'label' => 'Administrador'],
-        'coordinacion' => ['slug' => 'coordinador', 'label' => 'Coordinación'],
-        'docente' => ['slug' => 'profesor proyecto', 'label' => 'Docente'],
+        'estudiante'   => ['slug' => 'estudiante',        'label' => 'Estudiante'],
+        'administrador'=> ['slug' => 'administrador',     'label' => 'Administrador'],
+        'coordinacion' => ['slug' => 'coordinador',       'label' => 'Coordinación'],
+        'docente'      => ['slug' => 'profesor proyecto',  'label' => 'Docente'],
+        'negocio'      => ['slug' => 'negocio',           'label' => 'Negocio'],
     ],
 
     /*
@@ -32,9 +34,10 @@ return [
     |--------------------------------------------------------------------------
     */
     'aliases' => [
-        'coordinador' => ['coordinador', 'coordinacion', 'coordinador coordinacion'],
+        'coordinador'      => ['coordinador', 'coordinacion', 'coordinador coordinacion'],
         'profesor proyecto' => ['profesor proyecto', 'profesor', 'docente'],
-        'administrador' => ['administrador', 'admin'],
+        'administrador'    => ['administrador', 'admin'],
+        'negocio'          => ['negocio'],
     ],
 
     /*
@@ -51,7 +54,7 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Simula en sesión el acceso del rol elegido (menú y permisos), sin copiar BD.
+    | Simula en sesión el acceso del rol elegido
     |--------------------------------------------------------------------------
     */
     'allow_free_session_roles' => env('ROLES_ALLOW_FREE_SESSION', true),
