@@ -17,5 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->reportable(function (\Illuminate\Database\QueryException $e) {
+            \App\Helpers\DbHelper::handleQueryError($e);
+        });
     })->create();

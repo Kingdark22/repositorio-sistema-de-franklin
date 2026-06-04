@@ -100,7 +100,17 @@ class MagicLoginController extends Controller
         try {
             // 4. Buscar usuario en BD externa con fallback automático a simulación.
             $connection = DbHelper::connection();
-            $user = User::on($connection)->whereRaw('TRIM(usu_cedula) = ?', [$cedula])->first();
+            $user = null;
+
+            try {
+                $user = User::on($connection)->whereRaw('TRIM(usu_cedula) = ?', [$cedula])->first();
+            } catch (\Exception $e) {
+                DbHelper::handleQueryError($e);
+                if ($connection === 'intranet') {
+                    Log::warning('MagicLogin: intranet query falló, reintentando en simulación: ' . $e->getMessage());
+                    $user = User::on('simulacion')->whereRaw('TRIM(usu_cedula) = ?', [$cedula])->first();
+                }
+            }
 
             if (! $user && $connection === 'intranet') {
                 $user = User::on('simulacion')->whereRaw('TRIM(usu_cedula) = ?', [$cedula])->first();

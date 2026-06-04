@@ -13,29 +13,34 @@
             transition: background-color 0.2s ease, transform 0.2s ease;
             text-decoration: none;
         }
-
         .cm-btn:hover {
             transform: translateY(-1px);
         }
-
         .cm-btn-primary {
             background: #19692e;
             border-color: #154f26;
             color: #fff;
         }
-
         .cm-btn-danger {
-            background: #8b0000;
-            border-color: #6d0000;
+            background: #c82333;
+            border-color: #a71d2a;
             color: #fff;
         }
-
         .cm-btn-secondary {
             background: #f4f4f4;
-            border-color: #c2c2c2;
+            border: 1px solid #c2c2c2;
             color: #222;
         }
-
+        .cm-btn-success {
+            background: #198754;
+            border-color: #166f43;
+            color: #fff;
+        }
+        .cm-btn-warning {
+            background: #f0b606;
+            border-color: #d99e00;
+            color: #212529;
+        }
         .cm-btn-sm {
             padding: 0.35rem 0.75rem;
             font-size: 0.85rem;
@@ -69,17 +74,15 @@
         <fieldset style="border: 2px solid #8b0000; border-radius: 6px; padding: 10px; margin-bottom: 20px;">
             <legend style="color: #000; font-weight: bold; font-style: italic; padding: 0 5px;">Buscador y listado
             </legend>
-            <table width="100%" border="0" cellpadding="4" cellspacing="0" style="font-size: 11px;">
+            <table width="100%" border="0" cellpadding="8" cellspacing="0" style="font-size: 11px;">
                 <tr>
-                    <td width="30%"><b>Buscar (nombre / RIF / dirección):</b></td>
-                    <td width="50%">
-                        <input wire:model.live="search" type="text" style="width: 90%; padding: 3px;"
-                            placeholder="...">
+                    <td width="65%">
+                        <b>Buscar (nombre / RIF / dirección):</b>
+                        <input wire:model.live="search" type="text" style="width: 90%; padding: 3px;" placeholder="...">
                     </td>
-                    <td width="20%" align="right">
+                    <td width="35%" align="right">
                         @if ($puedeGestionar)
-                            <button type="button" wire:click="create" class="cm-btn cm-btn-danger cm-btn-sm"
-                                style="min-width: 170px;">
+                            <button type="button" wire:click="create" class="cm-btn cm-btn-success" style="font-size: 14px; padding: 8px 18px;">
                                 Registrar nueva comunidad
                             </button>
                         @endif
@@ -114,11 +117,18 @@
                             <td align="center">{{ $c->correo }}<br><b>{{ $c->numero_telefono }}</b></td>
                             <td align="center">
                                 @if ($puedeGestionar)
-                                    <button type="button" wire:click.prevent="edit({{ $c->id }})"
-                                        class="cm-btn cm-btn-secondary cm-btn-sm" wire:loading.attr="disabled"
-                                        wire:target="edit">
-                                        Editar
-                                    </button>
+                                    <div style="display: inline-flex; align-items: center; gap: 4px;">
+                                        <button type="button" wire:click.prevent="edit({{ $c->id }})"
+                                            class="cm-btn cm-btn-secondary cm-btn-sm" wire:loading.attr="disabled"
+                                            wire:target="edit">
+                                            Editar
+                                        </button>
+                                        <button type="button" wire:click.prevent="delete({{ $c->id }})"
+                                            wire:confirm="¿Estás seguro de eliminar esta comunidad?"
+                                            class="cm-btn cm-btn-danger cm-btn-sm">
+                                            Eliminar
+                                        </button>
+                                    </div>
                                 @else
                                     <span style="color: #888; font-size: 10px;">Solo lectura</span>
                                 @endif
@@ -222,7 +232,7 @@
                 </tr>
             </table>
             <div style="margin-top: 15px; text-align: center;">
-                <button type="button" wire:click="cancel" class="cm-btn cm-btn-secondary"
+                <button type="button" wire:click="cancel" class="cm-btn cm-btn-danger"
                     style="margin-right: 10px;">Cancelar</button>
                 <button type="button" wire:click="save" class="cm-btn cm-btn-primary">Guardar</button>
             </div>

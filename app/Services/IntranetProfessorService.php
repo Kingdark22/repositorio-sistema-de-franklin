@@ -31,24 +31,22 @@ class IntranetProfessorService
      */
     public function lapsosActivos(): Collection
     {
-        // Usar caché para evitar múltiples consultas a la base de datos
-        // La clave de la caché puede incluir la conexión para evitar conflictos si se cambia la DB
         $cacheKey = 'lapsos_activos_'.DbHelper::connection();
 
         return \Illuminate\Support\Facades\Cache::remember($cacheKey, now()->addMinutes(60), function () {
             try {
-                // Usamos DualDatabase para que DbHelper elija automáticamente intranet o simulación
                 $rows = DualDatabase::table('lapso_academico')
                     ->where('lap_estatus', config('proyecto_profesor.lapso_estatus_activo', 'A'))
                     ->orderByDesc('lap_codigo')
                     ->get(['lap_codigo', 'lap_nombre']);
 
-                // Solo espejamos si realmente estamos en intranet
                 if (DbHelper::isUsingIntranet()) {
                     DualDatabase::mirrorAcademicRows('lapso_academico', $rows);
                 }
 
-                return $rows;
+                return $rows->reject(fn ($l) =>
+                    empty(trim($l->lap_nombre ?? '')) || trim($l->lap_nombre) === 'No Regist.'
+                )->values();
             } catch (\Throwable $e) {
                 \Illuminate\Support\Facades\Log::error("Error en lapsosActivos: " . $e->getMessage());
                 return collect();
@@ -417,19 +415,14 @@ class IntranetProfessorService
      */
     public function programasEnLapso(?int $lapCodigo): Collection
     {
-        if ($lapCodigo === null) {
-            return collect();
-        }
+        $cacheKey = 'todos_programas_' . DbHelper::connection();
 
-        $cacheKey = 'programas_en_lapso_' . $lapCodigo . '_' . DbHelper::connection();
-
-        return Cache::remember($cacheKey, now()->addSeconds(self::CACHE_TTL), function () use ($lapCodigo) {
+        return Cache::remember($cacheKey, now()->addSeconds(self::CACHE_TTL), function () {
             try {
-                return $this->baseProfesorProyectoQuery($lapCodigo)
-                    ->select(['pro.pro_codigo', 'pro.pro_siglas', 'pro.pro_nombre'])
-                    ->whereNotNull('pro.pro_codigo')
-                    ->distinct()
-                    ->orderBy('pro.pro_siglas')
+                return DB::connection($this->academicConnection())
+                    ->table('programa')
+                    ->select(['pro_codigo', 'pro_siglas', 'pro_nombre'])
+                    ->orderBy('pro_siglas')
                     ->get();
             } catch (\Throwable) {
                 return collect();
@@ -440,22 +433,23 @@ class IntranetProfessorService
     /**
      * @return Collection<int, object{tra_codigo: int, tra_nombre: string}>
      */
-    public function trayectosEnLapso(?int $lapCodigo, ?int $programaCodigo = null): Collection
+    public function trayectosEnLapso(?int $lapCodigo = null, ?int $programaCodigo = null): Collection
     {
-        if ($lapCodigo === null) {
-            return collect();
-        }
+        $cacheKey = 'todos_trayectos_' . ($programaCodigo ?? '0') . '_' . DbHelper::connection();
 
-        $cacheKey = 'trayectos_en_lapso_' . $lapCodigo . '_' . ($programaCodigo ?? '0') . '_' . DbHelper::connection();
-
-        return Cache::remember($cacheKey, now()->addSeconds(self::CACHE_TTL), function () use ($lapCodigo, $programaCodigo) {
-            $filtros = $programaCodigo ? ['programa' => $programaCodigo] : [];
-
+        return Cache::remember($cacheKey, now()->addSeconds(self::CACHE_TTL), function () use ($programaCodigo) {
             try {
-                return $this->baseProfesorProyectoQuery($lapCodigo, $filtros)
-                    ->select(['tra.tra_codigo', 'tra.tra_nombre'])
-                    ->whereNotNull('tra.tra_codigo')
-                    ->distinct()
+                $conn = $this->academicConnection();
+                $query = DB::connection($conn)
+                    ->table('trayecto as tra')
+                    ->select(['tra.tra_codigo', 'tra.tra_nombre']);
+
+                if ($programaCodigo) {
+                    $query->join('malla as mal', 'mal.mal_cod_trayecto', '=', 'tra.tra_codigo')
+                        ->where('mal.mal_cod_programa', $programaCodigo);
+                }
+
+                return $query->distinct()
                     ->orderBy('tra.tra_nombre')
                     ->get();
             } catch (\Throwable) {
@@ -476,15 +470,28 @@ class IntranetProfessorService
         $cacheKey = 'secciones_en_lapso_' . $lapCodigo . '_' . ($programaCodigo ?? '0') . '_' . ($trayectoCodigo ?? '0') . '_' . DbHelper::connection();
 
         return Cache::remember($cacheKey, now()->addSeconds(self::CACHE_TTL), function () use ($lapCodigo, $programaCodigo, $trayectoCodigo) {
-            $filtros = array_filter([
-                'programa' => $programaCodigo,
-                'trayecto' => $trayectoCodigo,
-            ]);
-
             try {
-                return $this->baseProfesorProyectoQuery($lapCodigo, $filtros)
-                    ->select(['sec.sec_codigo', 'sec.sec_nombre', 'pro.pro_siglas', 'tra.tra_nombre'])
-                    ->distinct()
+                $conn = $this->academicConnection();
+                $query = DB::connection($conn)
+                    ->table('seccion as sec')
+                    ->join('lapso_academico as lap', 'lap.lap_codigo', '=', 'sec.sec_cod_lapso_academico')
+                    ->leftJoin('malla as mal', 'mal.mal_codigo', '=', 'sec.sec_cod_malla')
+                    ->leftJoin('programa as pro', 'pro.pro_codigo', '=', 'mal.mal_cod_programa')
+                    ->where('lap.lap_codigo', $lapCodigo)
+                    ->select(['sec.sec_codigo', 'sec.sec_nombre', 'pro.pro_siglas']);
+
+                $query->leftJoin('trayecto as tra', 'tra.tra_codigo', '=', 'mal.mal_cod_trayecto')
+                    ->addSelect('tra.tra_nombre');
+
+                if ($programaCodigo) {
+                    $query->where('pro.pro_codigo', $programaCodigo);
+                }
+
+                if ($trayectoCodigo) {
+                    $query->where('tra.tra_codigo', $trayectoCodigo);
+                }
+
+                return $query->distinct()
                     ->orderBy('sec.sec_nombre')
                     ->get();
             } catch (\Throwable) {

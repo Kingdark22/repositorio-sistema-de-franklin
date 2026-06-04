@@ -20,7 +20,12 @@ Route::get('/login', function (\Illuminate\Http\Request $request) {
         return app(MagicLoginController::class)->login($request);
     }
 
-    return view('auth.access-info');
+    // Si ya está autenticado, redirigir al dashboard
+    if (\Illuminate\Support\Facades\Auth::check()) {
+        return redirect()->route('dashboard');
+    }
+
+    return view('auth.login');
 })->name('login');
 
 Route::middleware('auth')->group(function () {

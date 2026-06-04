@@ -22,7 +22,7 @@
 
     <fieldset style="border: 1px solid #CCC; padding: 10px; margin-bottom: 15px;">
         <legend style="font-weight: bold; font-size: 12px;">Filtros</legend>
-        <table class="ppm-filters-table" width="100%" border="0" cellpadding="4" cellspacing="0">
+        <table class="ppm-filters-table" width="100%" border="0" cellpadding="8" cellspacing="0">
             <tr>
                 <td width="25%"><b>Lapso académico:</b><br>
                     <select wire:model.live="lapsoFilter">

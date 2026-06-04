@@ -7,7 +7,10 @@ use App\Models\Trayecto;
 use App\Services\IntranetProfessorService;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Livewire\Attributes\Lazy;
+use Illuminate\Support\Facades\Cache;
 
+#[Lazy]
 class ComunidadManager extends Component
 {
     use WithPagination;
@@ -38,7 +41,7 @@ class ComunidadManager extends Component
             'nombre' => 'required|string|max:255',
             'rif' => 'nullable|string|max:50',
             'direccion' => 'required|string|max:500',
-            'correo' => 'required|email|max:150',
+            'correo' => 'nullable|email|max:150',
             'prefijo_telefono' => 'required|in:0424,0414,0412,0422,0416,0426',
             'numero_telefono' => 'required|digits:7',
             'anio' => 'nullable|string|max:32',
@@ -50,7 +53,7 @@ class ComunidadManager extends Component
         return [
             'nombre.required' => 'El nombre de la comunidad es obligatorio',
             'direccion.required' => 'La dirección es obligatoria',
-            'correo.required' => 'El correo es obligatorio',
+            'correo.email' => 'El correo debe ser una dirección válida',
             'prefijo_telefono.required' => 'El prefijo del teléfono es obligatorio',
             'numero_telefono.required' => 'El teléfono es obligatorio',
             'numero_telefono.digits' => 'El teléfono debe tener 7 dígitos.',
@@ -134,6 +137,26 @@ class ComunidadManager extends Component
         $this->dispatch('refresh-icons');
     }
 
+    public function placeholder()
+    {
+        return <<<'HTML'
+        <div class="p-6 w-full bg-white rounded-lg shadow-sm border border-slate-100 dark:bg-slate-900 dark:border-slate-800">
+            <div class="animate-pulse space-y-6">
+                <div class="flex justify-between items-center">
+                    <div class="h-6 bg-slate-200 dark:bg-slate-700 rounded w-1/4"></div>
+                    <div class="h-10 bg-slate-200 dark:bg-slate-700 rounded w-32"></div>
+                </div>
+                <div class="h-10 bg-slate-100 dark:bg-slate-800 rounded w-full"></div>
+                <div class="space-y-3">
+                    <div class="h-12 bg-slate-50 dark:bg-slate-800/50 rounded w-full"></div>
+                    <div class="h-12 bg-slate-50 dark:bg-slate-800/50 rounded w-full"></div>
+                    <div class="h-12 bg-slate-50 dark:bg-slate-800/50 rounded w-full"></div>
+                </div>
+            </div>
+        </div>
+        HTML;
+    }
+
     public function save(): void
     {
         if (! $this->puedeGestionar()) {
@@ -153,6 +176,7 @@ class ComunidadManager extends Component
         ];
 
         Comunidad::guardar($payload, $this->editingId);
+        Cache::forget('gestion_comunidades_ordenadas');
 
         session()->flash('message', 'Comunidad guardada correctamente.');
         $this->viewMode = 'list';
@@ -163,6 +187,18 @@ class ComunidadManager extends Component
     {
         $this->viewMode = 'list';
         $this->dispatch('refresh-icons');
+    }
+
+    public function delete(int $id): void
+    {
+        if (! $this->puedeGestionar()) {
+            session()->flash('message_error', 'No tiene permiso para eliminar comunidades.');
+            return;
+        }
+
+        Comunidad::findOrFail($id)->delete();
+        Cache::forget('gestion_comunidades_ordenadas');
+        session()->flash('message', 'Comunidad eliminada correctamente.');
     }
 
     public function with(): array
@@ -178,22 +214,25 @@ class ComunidadManager extends Component
             ->orderByDesc((new Comunidad())->getKeyName())
             ->paginate(10);
 
-        try {
-            $trayectos = Trayecto::on(\App\Helpers\DbHelper::connection())
-                ->whereNotNull('tra_nombre')
-                ->orderBy('tra_nombre')
-                ->get();
-        } catch (\Throwable) {
-            $trayectos = collect();
-        }
-        if ($trayectos->isEmpty()) {
-            $trayectos = collect([
-                (object) ['tra_nombre' => 'I'],
-                (object) ['tra_nombre' => 'II'],
-                (object) ['tra_nombre' => 'III'],
-                (object) ['tra_nombre' => 'IV'],
-            ]);
-        }
+        $trayectos = Cache::remember('trayectos_para_select', 3600, function () {
+            try {
+                $t = Trayecto::on(\App\Helpers\DbHelper::connection())
+                    ->whereNotNull('tra_nombre')
+                    ->orderBy('tra_nombre')
+                    ->get();
+            } catch (\Throwable) {
+                $t = collect();
+            }
+            if ($t->isEmpty()) {
+                $t = collect([
+                    (object) ['tra_nombre' => 'I'],
+                    (object) ['tra_nombre' => 'II'],
+                    (object) ['tra_nombre' => 'III'],
+                    (object) ['tra_nombre' => 'IV'],
+                ]);
+            }
+            return $t;
+        });
 
         return [
             'comunidades' => $comunidades,

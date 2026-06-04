@@ -39,7 +39,7 @@ new class extends Component
     <!-- Filters & Search -->
     <fieldset style="border: 2px solid #8b0000; border-radius: 6px; padding: 10px; margin-bottom: 15px;">
         <legend style="color: #000; font-weight: bold; font-style: italic; padding: 0 5px;">Busqueda en el Repositorio</legend>
-        <table width="100%" border="0" cellpadding="4" cellspacing="0" style="font-size: 11px;">
+        <table width="100%" border="0" cellpadding="8" cellspacing="0" style="font-size: 11px;">
             <tr>
                 <td width="50%">
                     <b>Búsqueda global (Título, resumen):</b><br>

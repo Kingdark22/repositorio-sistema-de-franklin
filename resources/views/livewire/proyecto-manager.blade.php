@@ -1,4 +1,39 @@
 <div class="pgm-wrap">
+    <style>
+        .pgm-action-bar {
+            margin-bottom: 20px;
+        }
+        .pgm-btn-registrar {
+            background-color: #28a745;
+            color: #fff;
+            border: 1px solid #218838;
+            border-radius: 0;
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .pgm-btn-cancel {
+            background-color: #dc3545;
+            color: #fff;
+            border: 0 none;
+            border-radius: 4px;
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .pgm-btn-save {
+            background-color: #28a745;
+            color: #fff;
+            border: 1px solid #218838;
+            border-radius: 4px;
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+    </style>
     <h2 class="titulo" style="margin-bottom: 20px; font-weight: bolder; margin-top: 10px;">Gestión de Proyectos</h2>
 
     @if (session()->has('message'))
@@ -16,14 +51,11 @@
     @endif
 
     @if ($viewMode === 'list')
-        <div class="pgm-action-bar">
+        <div class="pgm-action-bar" style="display: flex; align-items: center; gap: 12px;">
             @if ($canRegister ?? false)
-                <div>
-                    <button type="button" wire:click="iniciarRegistro" class="boton"
-                        style="background-color: #28a745; color: #fff; border: 1px solid #218838; border-radius: 4px; padding: 6px 12px; font-size: 12px; font-weight: bold;">
-                        + REGISTRAR NUEVO PROYECTO
-                    </button>
-                </div>
+                <button type="button" wire:click="iniciarRegistro" class="pgm-btn-registrar">
+                    + REGISTRAR NUEVO PROYECTO
+                </button>
             @else
                 <span class="pgm-aviso" style="font-weight: bold;">
                     Registro no disponible: se requiere inscripción activa en una sección del lapso académico
@@ -48,7 +80,7 @@
         @if ($listTab === 'validar')
             <div style="margin-bottom: 15px;">
                 <b>Búsqueda (título):</b>
-                <input wire:model.live="search" type="text" style="width: 250px;" placeholder="...">
+                <input wire:model.live.debounce.300ms="search" type="text" style="width: 400px;" placeholder="...">
             </div>
 
             <fieldset style="border: 2px solid #8b0000; border-radius: 6px; padding: 10px; margin: 0;">
@@ -124,10 +156,10 @@
         @else
             <fieldset style="border: 1px solid #CCC; padding: 10px; margin-bottom: 15px;">
                 <legend style="font-weight: bold; font-size: 12px;">Filtros</legend>
-                <table width="100%" border="0" cellpadding="4" cellspacing="0" style="font-size: 11px;">
+                <table width="100%" border="0" cellpadding="8" cellspacing="0" style="font-size: 11px;">
                     <tr>
                         <td width="33%"><b>Título:</b><br>
-                            <input wire:model.live="search" type="text" style="width: 95%;" placeholder="Buscar...">
+                            <input wire:model.live.debounce.300ms="search" type="text" style="width: 95%;" placeholder="Buscar...">
                         </td>
                         <td width="33%"><b>Estado validación:</b><br>
                             <select wire:model.live="filterEstadoList" style="width: 95%;">
@@ -267,10 +299,8 @@
                 <div class="obligatorio" style="font-size: 11px; margin-top: 5px;">{{ $message }}</div>
             @enderror
             <div style="margin-top: 20px;">
-                <button type="button" wire:click="irAListado('{{ $listTab }}')" class="boton"
-                    style="margin-right: 10px;">Cancelar</button>
-                <button type="button" wire:click="confirmReject" class="boton"
-                    style="background-color: #f8d7da; color: #721c24; font-weight: bold;">Confirmar rechazo</button>
+                <button type="button" wire:click="irAListado('{{ $listTab }}')" class="pgm-btn-cancel" style="margin-right: 10px;">Cancelar</button>
+                <button type="button" wire:click="confirmReject" class="pgm-btn-cancel" style="background-color: #f8d7da; color: #721c24; font-weight: bold;">Confirmar rechazo</button>
             </div>
         </fieldset>
     @elseif($viewMode === 'details' && $selectedProject)
@@ -567,10 +597,8 @@
                 </fieldset>
 
                 <div style="text-align: center; margin-top: 20px;">
-                    <button type="button" wire:click="cancel" class="boton"
-                        style="margin-right: 10px;">Cancelar</button>
-                    <button type="submit" class="boton"
-                        style="background-color: #28a745; color: #fff; border: 1px solid #218838; border-radius: 4px; padding: 6px 12px; font-size: 12px; font-weight: bold;">{{ $editingId ? 'Guardar cambios' : 'Registrar proyecto' }}</button>
+                    <button type="button" wire:click="cancel" class="pgm-btn-cancel" style="margin-right: 10px;">Cancelar</button>
+                    <button type="submit" class="pgm-btn-save">{{ $editingId ? 'Guardar cambios' : 'Registrar proyecto' }}</button>
                 </div>
             </form>
         </fieldset>

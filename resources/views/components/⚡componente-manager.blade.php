@@ -2,6 +2,9 @@
 
 use App\Models\Componente;
 use App\Models\Coordinacion;
+use App\Services\IntranetEquipoSeccionService;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -9,11 +12,20 @@ new class extends Component {
     use WithPagination;
 
     public $search = '';
+    public $filterPrograma = '';
+    public $filterTrayecto = '';
     public $viewMode = 'list';
     public $editingId = null;
 
     public $coordinacion_id = '';
     public $anio = '';
+
+    public Collection $trayectosPrograma;
+
+    public function mount()
+    {
+        $this->trayectosPrograma = collect();
+    }
 
     // For editing or single mode
     public $nombre = '';
@@ -24,15 +36,6 @@ new class extends Component {
 
     protected function rules()
     {
-        if ($this->editingId) {
-            return [
-                'nombre' => 'required|min:3',
-                'coordinacion_id' => 'required',
-                'anio' => 'required|string',
-                'es_obligatorio' => 'boolean',
-            ];
-        }
-
         return [
             'coordinacion_id' => 'required',
             'anio' => 'required|string',
@@ -42,7 +45,6 @@ new class extends Component {
     }
 
     protected $messages = [
-        'nombre.required' => 'Debe nombrar el documento.',
         'rows.*.nombre.required' => 'Debe nombrar el documento en esta fila.',
         'coordinacion_id.required' => 'Debe asignar una PNF / Coordinación rectora.',
         'anio.required' => 'Debe asignarle el trayecto (I, II, III, IV).',
@@ -53,18 +55,48 @@ new class extends Component {
         $this->resetPage();
     }
 
+    public function updatingFilterPrograma()
+    {
+        $this->resetPage();
+    }
+
+    public function updatingFilterTrayecto()
+    {
+        $this->resetPage();
+    }
+
+    public function updatedCoordinacionId($value)
+    {
+        $this->anio = '';
+        $this->loadTrayectosPrograma();
+    }
+
+    protected function loadTrayectosPrograma()
+    {
+        if ($this->coordinacion_id === '') {
+            $this->trayectosPrograma = collect();
+
+            return;
+        }
+
+        $this->trayectosPrograma = app(IntranetEquipoSeccionService::class)
+            ->trayectosEnLapso(null, (int) $this->coordinacion_id);
+    }
+
     public function create()
     {
         $this->resetValidation();
         $this->resetFields();
-        $this->rows = [['nombre' => '', 'es_obligatorio' => true]];
+
+        $this->loadTrayectosPrograma();
+        $this->rows = [['id' => null, 'nombre' => '', 'es_obligatorio' => true]];
 
         $this->viewMode = 'form';
     }
 
     public function addRow()
     {
-        $this->rows[] = ['nombre' => '', 'es_obligatorio' => true];
+        $this->rows[] = ['id' => null, 'nombre' => '', 'es_obligatorio' => true];
     }
 
     public function removeRow($index)
@@ -79,13 +111,29 @@ new class extends Component {
     {
         $this->resetValidation();
         $this->editingId = $id;
-        $comp = Componente::findOrFail($id);
 
-        $this->nombre = $comp->nombre;
-        $this->coordinacion_id = $comp->coordinacion_id;
-        $this->anio = $comp->anio;
-        $this->es_obligatorio = $comp->es_obligatorio;
+        $conn = config('dual_database.repositorio_connection', 'mysql');
+        $comp = DB::connection($conn)
+            ->table('componentes')
+            ->where('comp_codigo', $id)
+            ->first();
 
+        if (!$comp) {
+            abort(404);
+        }
+
+        $this->coordinacion_id = (string) $comp->coord_codigo;
+        $this->anio = $comp->comp_anio;
+
+        $this->rows = [
+            [
+                'id' => $comp->comp_codigo,
+                'nombre' => $comp->comp_nombre,
+                'es_obligatorio' => (bool) $comp->comp_es_obligatorio,
+            ]
+        ];
+
+        $this->loadTrayectosPrograma();
         $this->viewMode = 'form';
     }
 
@@ -108,20 +156,57 @@ new class extends Component {
     public function save()
     {
         $this->validate();
+        $conn = config('dual_database.repositorio_connection', 'mysql');
 
         if ($this->editingId) {
-            Componente::guardar(
-                [
-                    'nombre' => $this->nombre,
-                    'coordinacion_id' => $this->coordinacion_id,
-                    'anio' => $this->anio,
-                    'es_obligatorio' => $this->es_obligatorio,
-                ],
-                $this->editingId,
-            );
-            session()->flash('message', 'Componente documental actualizado.');
+            $createdCount = 0;
+            foreach ($this->rows as $row) {
+                if (!empty($row['id'])) {
+                    DB::connection($conn)
+                        ->table('componentes')
+                        ->where('comp_codigo', $row['id'])
+                        ->update([
+                            'comp_nombre' => $row['nombre'],
+                            'coord_codigo' => $this->coordinacion_id,
+                            'comp_anio' => $this->anio,
+                            'comp_es_obligatorio' => $row['es_obligatorio'] ? 1 : 0,
+                            'updated_at' => now(),
+                        ]);
+                } else {
+                    DB::connection($conn)
+                        ->table('componentes')
+                        ->insert([
+                            'comp_nombre' => $row['nombre'],
+                            'coord_codigo' => $this->coordinacion_id,
+                            'comp_anio' => $this->anio,
+                            'comp_es_obligatorio' => $row['es_obligatorio'] ? 1 : 0,
+                            'comp_estado_logico' => 1,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                    $createdCount++;
+                }
+            }
+
+            if ($createdCount > 0) {
+                session()->flash('message', "Componente actualizado y {$createdCount} nuevos componentes agregados con éxito.");
+            } else {
+                session()->flash('message', 'Componente documental actualizado.');
+            }
         } else {
-            Componente::guardarMuchos($this->rows, $this->coordinacion_id, $this->anio);
+            foreach ($this->rows as $row) {
+                DB::connection($conn)
+                    ->table('componentes')
+                    ->insert([
+                        'comp_nombre' => $row['nombre'],
+                        'coord_codigo' => $this->coordinacion_id,
+                        'comp_anio' => $this->anio,
+                        'comp_es_obligatorio' => $row['es_obligatorio'] ? 1 : 0,
+                        'comp_estado_logico' => 1,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+            }
             session()->flash('message', count($this->rows) . ' Componentes creados con éxito.');
         }
 
@@ -131,29 +216,83 @@ new class extends Component {
 
     public function toggleStatus($id)
     {
-        $item = Componente::findOrFail($id);
-        $item->alternarEstado();
-        session()->flash('message', 'Estado lógico del componente actualizado.');
+        $conn = config('dual_database.repositorio_connection', 'mysql');
+        $item = DB::connection($conn)
+            ->table('componentes')
+            ->where('comp_codigo', $id)
+            ->first();
+
+        if ($item) {
+            DB::connection($conn)
+                ->table('componentes')
+                ->where('comp_codigo', $id)
+                ->update([
+                    'comp_estado_logico' => !$item->comp_estado_logico,
+                    'updated_at' => now(),
+                ]);
+            session()->flash('message', 'Estado lógico del componente actualizado.');
+        }
         $this->dispatch('refresh-icons');
     }
 
     public function delete($id)
     {
-        $item = Componente::findOrFail($id);
-        $item->borrar();
+        $conn = config('dual_database.repositorio_connection', 'mysql');
+        DB::connection($conn)
+            ->table('componentes')
+            ->where('comp_codigo', $id)
+            ->delete();
+
         session()->flash('message', 'Regla de componente eliminada de la base de datos.');
         $this->dispatch('refresh-icons');
     }
 
+    public function getNombreCoordinacion($coordinacionId)
+    {
+        if (!$coordinacionId) {
+            return 'N/A';
+        }
+        $conn = \App\Helpers\DualDatabase::academicConnection();
+        $prog = DB::connection($conn)
+            ->table('programa')
+            ->where('pro_codigo', $coordinacionId)
+            ->first(['pro_nombre', 'pro_siglas']);
+
+        return $prog ? ($prog->pro_siglas ?? $prog->pro_nombre) : "Programa #{$coordinacionId}";
+    }
+
     public function with()
     {
-        $query = Componente::where(function ($q) {
-            $q->where('nombre', 'like', "%{$this->search}%")->orWhere('anio', 'like', "%{$this->search}%");
-        });
+        $conn = config('dual_database.repositorio_connection', 'mysql');
+        $query = DB::connection($conn)->table('componentes');
+
+        if ($this->search !== '') {
+            $query->where(function ($q) {
+                $q->where('comp_nombre', 'like', "%{$this->search}%")
+                  ->orWhere('comp_anio', 'like', "%{$this->search}%");
+            });
+        }
+
+        if ($this->filterPrograma !== '') {
+            $query->where('coord_codigo', $this->filterPrograma);
+        }
+
+        if ($this->filterTrayecto !== '') {
+            $query->where('comp_anio', $this->filterTrayecto);
+        }
+
+        $trayectosDb = \App\Models\Trayecto::on(\App\Helpers\DbHelper::connection())
+            ->whereNotNull('tra_nombre')
+            ->orderBy('tra_nombre')
+            ->pluck('tra_nombre')
+            ->unique()
+            ->values()
+            ->toArray();
 
         return [
-            'listaRegistros' => $query->latest()->paginate(10),
+            'listaRegistros' => $query->latest('comp_codigo')->paginate(10),
             'programas' => app(\App\Services\AcademicCatalog::class)->programasForSelect(),
+            'trayectos' => $trayectosDb ?: ['I', 'II', 'III', 'IV', 'V', 'VI'],
         ];
     }
 };
@@ -232,13 +371,26 @@ new class extends Component {
     @endif
 
     @if ($viewMode === 'list')
-        <div style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
-            <div>
-                <b>Filtrar Componente:</b>
-                <input wire:model.live="search" type="text" style="width: 250px;"
-                    placeholder="Buscar componente o año...">
+        <div style="margin-bottom: 15px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px;">
+            <select wire:model.live="filterPrograma" style="padding: 4px; min-width: 200px;">
+                <option value="">Todos los programas</option>
+                @foreach ($programas as $p)
+                    <option value="{{ $p->id }}">{{ $p->siglas }} - {{ $p->nombre }}</option>
+                @endforeach
+            </select>
+            <select wire:model.live="filterTrayecto" style="padding: 4px; min-width: 120px;">
+                <option value="">Todos los trayectos</option>
+                @foreach ($trayectos as $t)
+                    <option value="{{ $t }}">Trayecto {{ $t }}</option>
+                @endforeach
+            </select>
+            <div style="display: flex; align-items: center; gap: 4px;">
+                <b>Buscar:</b>
+                <input wire:model.live.debounce.300ms="search" type="text" style="width: 400px; padding: 4px 6px; border-radius: 4px; border: 1px solid #999;"
+                    placeholder="Componente o año...">
             </div>
-            <button wire:click="create" class="cm-btn cm-btn-success cm-btn-sm">
+            <span style="margin-left: auto;"></span>
+            <button wire:click="create" class="cm-btn cm-btn-success" style="font-size: 13px; padding: 6px 14px;">
                 Adicionar Componente Nuevo
             </button>
         </div>
@@ -260,22 +412,22 @@ new class extends Component {
                 </thead>
                 <tbody class="Texto">
                     @foreach ($listaRegistros as $item)
-                        <tr style="background-color: {{ $loop->iteration % 2 == 0 ? '#E0E0E0' : '#FFFFFF' }}; {{ !$item->estado_logico ? 'color: #888;' : 'color: #000;' }}"
+                        <tr style="background-color: {{ $loop->iteration % 2 == 0 ? '#E0E0E0' : '#FFFFFF' }}; {{ !$item->comp_estado_logico ? 'color: #888;' : 'color: #000;' }}"
                             valign="top">
                             <td align="center">{{ $loop->iteration }}</td>
                             <td align="center" style="font-weight: bold; padding: 8px;">
-                                {{ mb_strtoupper($item->nombre) }}</td>
+                                {{ mb_strtoupper($item->comp_nombre) }}</td>
                             <td align="center" style="font-weight: bold; font-style: italic; padding: 8px;">
-                                {{ $item->nombre_coordinacion }} <br>
-                                <span style="color: #8b0000;">Trayecto/Año: {{ mb_strtoupper($item->anio) }}</span>
+                                {{ $this->getNombreCoordinacion($item->coord_codigo) }} <br>
+                                <span style="color: #8b0000;">Trayecto/Año: {{ mb_strtoupper($item->comp_anio) }}</span>
                             </td>
                             <td align="center">
-                                {!! $item->es_obligatorio
+                                {!! $item->comp_es_obligatorio
                                     ? '<span style="color: #FF0000; font-weight:bold;">SÍ</span>'
                                     : '<span style="color: #008000; font-weight:bold;">NO</span>' !!}
                             </td>
                             <td align="center">
-                                @if ($item->estado_logico)
+                                @if ($item->comp_estado_logico)
                                     <span style="color: #008000; font-weight: bold;">Activo</span>
                                 @else
                                     <span style="color: #FF0000; font-weight: bold;">Suspendido</span>
@@ -284,16 +436,16 @@ new class extends Component {
                             <td align="center">
                                 <div class="cm-btn-group"
                                     style="display: inline-flex; flex-wrap: wrap; justify-content: center;">
-                                    <button type="button" wire:click.prevent="edit({{ $item->id }})"
-                                        title="Editar Regla" class="cm-btn cm-btn-primary cm-btn-sm">
+                                    <button type="button" wire:click.prevent="edit({{ $item->comp_codigo }})"
+                                        title="Editar Regla" class="cm-btn cm-btn-secondary cm-btn-sm">
                                         Editar
                                     </button>
-                                    <button type="button" wire:click.prevent="toggleStatus({{ $item->id }})"
-                                        title="{{ $item->estado_logico ? 'Suspender Regla' : 'Publicar Regla' }}"
+                                    <button type="button" wire:click.prevent="toggleStatus({{ $item->comp_codigo }})"
+                                        title="{{ $item->comp_estado_logico ? 'Suspender Regla' : 'Publicar Regla' }}"
                                         class="cm-btn cm-btn-warning cm-btn-sm">
-                                        {{ $item->estado_logico ? 'Suspender' : 'Publicar' }}
+                                        {{ $item->comp_estado_logico ? 'Suspender' : 'Publicar' }}
                                     </button>
-                                    <button type="button" wire:click.prevent="delete({{ $item->id }})"
+                                    <button type="button" wire:click.prevent="delete({{ $item->comp_codigo }})"
                                         wire:confirm="¿Seguro desea eliminar esta regla? Desaparecerán solicitudes antiguas para este documento."
                                         title="Eliminar Base" class="cm-btn cm-btn-danger cm-btn-sm">
                                         Borrar
@@ -326,7 +478,7 @@ new class extends Component {
                         <td width="30%"><b>Programa Titular:</b></td>
                         <td width="70%">
                             @if (auth()->user()->hasRole('administrador'))
-                                <select wire:model="coordinacion_id" style="width: 80%; padding: 4px;">
+                                <select wire:model.live="coordinacion_id" style="width: 80%; padding: 4px;">
                                     <option value="">Seleccione a quién pertenece esta regla...</option>
                                     @foreach ($programas as $p)
                                         <option value="{{ $p->id }}">{{ $p->siglas }} -
@@ -347,8 +499,12 @@ new class extends Component {
                     <tr>
                         <td width="30%"><b>Aplica a los de Trayecto/Año:</b></td>
                         <td width="70%">
-                            <input type="text" wire:model="anio" style="width: 25%; padding: 4px;"
-                                placeholder="Ej: I, II, III, IV...">
+                            <select wire:model="anio" style="width: 30%; padding: 4px;">
+                                <option value="">Seleccione trayecto...</option>
+                                @foreach ($trayectosPrograma as $t)
+                                    <option value="{{ $t->tra_nombre }}">{{ $t->tra_nombre }}</option>
+                                @endforeach
+                            </select>
                             @error('anio')
                                 <br><span style="color:red; font-size:10px;">{{ $message }}</span>
                             @enderror
@@ -363,61 +519,46 @@ new class extends Component {
                             <tr>
                                 <th>Nombre del Componente</th>
                                 <th width="15%">Obligatorio</th>
-                                @if (!$editingId)
-                                    <th width="10%">Acción</th>
-                                @endif
+                                <th width="10%">Acción</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @if ($editingId)
+                            @foreach ($rows as $index => $row)
                                 <tr>
                                     <td>
-                                        <input type="text" wire:model="nombre" style="width: 95%; padding: 4px;"
+                                        <input type="text" wire:model="rows.{{ $index }}.nombre"
+                                            style="width: 95%; padding: 4px;"
                                             placeholder="Ej: Trabajo Escrito...">
-                                        @error('nombre')
+                                        @error("rows.$index.nombre")
                                             <br><span style="color:red; font-size:10px;">{{ $message }}</span>
                                         @enderror
                                     </td>
                                     <td align="center">
-                                        <input type="checkbox" wire:model="es_obligatorio">
+                                        <input type="checkbox"
+                                            wire:model="rows.{{ $index }}.es_obligatorio">
                                     </td>
-                                </tr>
-                            @else
-                                @foreach ($rows as $index => $row)
-                                    <tr>
-                                        <td>
-                                            <input type="text" wire:model="rows.{{ $index }}.nombre"
-                                                style="width: 95%; padding: 4px;"
-                                                placeholder="Ej: Trabajo Escrito...">
-                                            @error("rows.$index.nombre")
-                                                <br><span style="color:red; font-size:10px;">{{ $message }}</span>
-                                            @enderror
-                                        </td>
-                                        <td align="center">
-                                            <input type="checkbox"
-                                                wire:model="rows.{{ $index }}.es_obligatorio">
-                                        </td>
-                                        <td align="center">
-                                            @if (count($rows) > 1)
+                                    <td align="center">
+                                        @if (empty($row['id']))
+                                            @if (!$editingId || count($rows) > 1)
                                                 <button type="button" wire:click="removeRow({{ $index }})"
                                                     class="cm-btn cm-btn-danger cm-btn-sm">
                                                     Quitar
                                                 </button>
                                             @endif
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            @endif
+                                        @else
+                                            <span style="font-size: 10px; color: #666; font-weight: bold;">(Original)</span>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @endforeach
                         </tbody>
                     </table>
 
-                    @if (!$editingId)
-                        <div style="margin-top: 10px;">
-                            <button type="button" wire:click="addRow()" class="cm-btn cm-btn-success cm-btn-sm">
-                                Agregar otro componente
-                            </button>
-                        </div>
-                    @endif
+                    <div style="margin-top: 10px;">
+                        <button type="button" wire:click="addRow()" class="cm-btn cm-btn-success cm-btn-sm">
+                            Agregar otro componente
+                        </button>
+                    </div>
                 </div>
 
                 <div style="text-align: center; margin-top: 30px;">
@@ -428,7 +569,7 @@ new class extends Component {
                             Registrar Componentes
                         @endif
                     </button>
-                    <button type="button" wire:click="cancel" class="cm-btn cm-btn-secondary">
+                    <button type="button" wire:click="cancel" class="cm-btn cm-btn-danger">
                         Cancelar
                     </button>
                 </div>

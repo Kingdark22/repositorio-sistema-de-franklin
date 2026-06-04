@@ -36,7 +36,7 @@ new class extends Component
             'nombre' => 'required|string|max:255',
             'rif' => 'nullable|string|max:50',
             'direccion' => 'required|string|max:500',
-            'correo' => 'required|email|max:150',
+            'correo' => 'nullable|email|max:150',
             'prefijo_telefono' => 'required|in:0424,0414,0412,0422,0416,0426',
             'numero_telefono' => 'required|digits:7',
             'anio' => 'nullable|string|max:32',
@@ -48,7 +48,7 @@ new class extends Component
         return [
             'nombre.required' => 'El nombre de la comunidad es obligatorio',
             'direccion.required' => 'La dirección es obligatoria',
-            'correo.required' => 'El correo es obligatorio',
+            'correo.email' => 'El correo debe ser una dirección válida',
             'prefijo_telefono.required' => 'El prefijo del teléfono es obligatorio',
             'numero_telefono.required' => 'El teléfono es obligatorio',
             'numero_telefono.digits' => 'El teléfono debe tener 7 dígitos.',
@@ -209,6 +209,63 @@ new class extends Component
 ?>
 
 <div>
+    <style>
+        .cm-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            padding: 0.55rem 0.95rem;
+            font-size: 0.92rem;
+            font-weight: 600;
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.2s ease;
+            text-decoration: none;
+        }
+        .cm-btn:hover {
+            transform: translateY(-1px);
+        }
+        .cm-btn-primary {
+            background: #19692e;
+            border-color: #154f26;
+            color: #fff;
+        }
+        .cm-btn-success {
+            background: #198754;
+            border-color: #166f43;
+            color: #fff;
+        }
+        .cm-btn-danger {
+            background: #c82333;
+            border-color: #a71d2a;
+            color: #fff;
+        }
+        .cm-btn-secondary {
+            background: #f4f4f4;
+            border: 1px solid #c2c2c2;
+            color: #222;
+        }
+        .cm-btn-warning {
+            background: #f0b606;
+            border-color: #d99e00;
+            color: #212529;
+        }
+        .cm-btn-sm {
+            padding: 0.35rem 0.75rem;
+            font-size: 0.85rem;
+        }
+        }
+        .cm-btn-warning {
+            background: #f0b606;
+            border-color: #d99e00;
+            color: #212529;
+        }
+        .cm-btn-sm {
+            padding: 4px 10px;
+            font-size: 0.8rem;
+        }
+    </style>
     <h2 class="titulo" style="margin-bottom: 20px; font-weight: bolder; margin-top: 10px;">Gestión de Comunidades</h2>
 
     <p style="font-size: 10px; color: #555; margin-bottom: 12px;">
@@ -233,15 +290,15 @@ new class extends Component
     @if($viewMode === 'list')
     <fieldset style="border: 2px solid #8b0000; border-radius: 6px; padding: 10px; margin-bottom: 20px;">
         <legend style="color: #000; font-weight: bold; font-style: italic; padding: 0 5px;">Buscador y listado</legend>
-        <table width="100%" border="0" cellpadding="4" cellspacing="0" style="font-size: 11px;">
+        <table width="100%" border="0" cellpadding="8" cellspacing="0" style="font-size: 11px;">
             <tr>
-                <td width="30%"><b>Buscar (nombre / RIF / dirección):</b></td>
-                <td width="50%">
+                <td width="65%">
+                    <b>Buscar (nombre / RIF / dirección):</b>
                     <input wire:model.live="search" type="text" style="width: 90%; padding: 3px;" placeholder="...">
                 </td>
-                <td width="20%" align="right">
+                <td width="35%" align="right">
                     @if($puedeGestionar)
-                    <button type="button" wire:click="create" style="padding: 6px 14px; background-color: #8b0000; border: 1px solid #660000; border-radius: 4px; color: white; font-weight: bold; font-size: 0.95rem;">
+                    <button type="button" wire:click="create" class="cm-btn cm-btn-primary" style="font-size: 14px; padding: 8px 18px;">
                         Registrar nueva comunidad
                     </button>
                     @endif
@@ -274,7 +331,7 @@ new class extends Component
                     <td align="center">{{ $c->correo }}<br><b>{{ $c->numero_telefono }}</b></td>
                     <td align="center">
                         @if($puedeGestionar)
-                        <button type="button" wire:click.prevent="edit({{ $c->id }})" class="btn btn-info btn-md" style="display: flex; align-items: center; justify-content: center; gap: 5px;" wire:loading.attr="disabled" wire:target="edit">
+                        <button type="button" wire:click.prevent="edit({{ $c->id }})" class="cm-btn cm-btn-secondary" style="display: inline-flex; align-items: center; gap: 5px;" wire:loading.attr="disabled" wire:target="edit">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pencil-square" viewBox="0 0 16 16" style="margin-right: 5px;">
                                 <path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z" />
                                 <path fill-rule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5z" />
@@ -364,8 +421,8 @@ new class extends Component
             </tr>
         </table>
         <div style="margin-top: 15px; text-align: center;">
-            <button type="button" wire:click="cancel" class="btn btn-secondary btn-md" style="margin-right: 10px;">Cancelar</button>
-            <button type="button" wire:click="save" class="btn btn-primary btn-md">Guardar</button>
+            <button type="button" wire:click="cancel" class="cm-btn cm-btn-danger" style="margin-right: 10px;">Cancelar</button>
+            <button type="button" wire:click="save" class="cm-btn cm-btn-primary">Guardar</button>
         </div>
     </fieldset>
     @endif

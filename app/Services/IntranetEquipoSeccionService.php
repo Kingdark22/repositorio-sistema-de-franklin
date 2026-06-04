@@ -72,16 +72,19 @@ class IntranetEquipoSeccionService
 
     protected function baseInscripcionQuery()
     {
-        return DB::connection($this->academicConnection())
+        $query = DB::connection($this->academicConnection())
             ->table('inscripcion as ins')
             ->join('seccion_unidad_docente as sud', 'sud.sud_codigo', '=', 'ins.ins_cod_seccion_unidad_docente')
             ->join('seccion as sec', 'sec.sec_codigo', '=', 'sud.sud_cod_seccion')
             ->join('lapso_academico as lap', 'lap.lap_codigo', '=', 'sec.sec_cod_lapso_academico')
             ->leftJoin('malla as mal', 'mal.mal_codigo', '=', 'sec.sec_cod_malla')
             ->leftJoin('programa as pro', 'pro.pro_codigo', '=', 'mal.mal_cod_programa')
-            ->leftJoin('trayecto as tra', 'tra.tra_codigo', '=', 'mal.mal_cod_trayecto') // Added this line
             ->whereIn('ins.ins_estatus', $this->inscripcionActivaEstatus())
             ->where('lap.lap_estatus', config('proyecto_profesor.lapso_estatus_activo', 'A'));
+
+        $query->leftJoin('trayecto as tra', 'tra.tra_codigo', '=', 'mal.mal_cod_trayecto');
+
+        return $query;
     }
 
     /**
@@ -167,9 +170,9 @@ class IntranetEquipoSeccionService
         }
 
         try {
+            $conn = $this->academicConnection();
             $query = $this->baseInscripcionQuery()
                 ->whereRaw('TRIM(ins.ins_cedula) = ?', [$cedula])
-                ->leftJoin('trayecto as tra', 'tra.tra_codigo', '=', 'mal.mal_cod_trayecto')
                 ->select([
                     'sec.sec_codigo',
                     'sec.sec_nombre',
@@ -177,8 +180,8 @@ class IntranetEquipoSeccionService
                     'lap.lap_nombre',
                     'pro.pro_siglas',
                     'pro.pro_nombre',
-                    'tra.tra_nombre',
-                ]);
+                ])
+                ->addSelect('tra.tra_nombre');
 
             if ($lapCodigo !== null) {
                 $query->where('lap.lap_codigo', $lapCodigo);
@@ -227,6 +230,7 @@ class IntranetEquipoSeccionService
         }
 
         try {
+            $conn = $this->academicConnection();
             $query = $this->baseInscripcionQuery()
                 ->select([
                     'sec.sec_codigo',
@@ -237,8 +241,17 @@ class IntranetEquipoSeccionService
                     'pro.pro_nombre',
                 ])
                 ->selectRaw('COUNT(DISTINCT TRIM(ins.ins_cedula)) as integrantes')
-                ->leftJoin('trayecto as tra', 'tra.tra_codigo', '=', 'mal.mal_cod_trayecto')
                 ->addSelect('tra.tra_nombre');
+
+            $groupBy = [
+                'sec.sec_codigo',
+                'sec.sec_nombre',
+                'lap.lap_codigo',
+                'lap.lap_nombre',
+                'pro.pro_siglas',
+                'pro.pro_nombre',
+                'tra.tra_nombre',
+            ];
 
             if (! empty($filtros['lapso'])) {
                 $query->where('lap.lap_codigo', (int) $filtros['lapso']);
@@ -259,15 +272,7 @@ class IntranetEquipoSeccionService
             }
 
             return $query
-                ->groupBy(
-                    'sec.sec_codigo',
-                    'sec.sec_nombre',
-                    'lap.lap_codigo',
-                    'lap.lap_nombre',
-                    'pro.pro_siglas',
-                    'pro.pro_nombre',
-                    'tra.tra_nombre'
-                )
+                ->groupBy($groupBy)
                 ->orderByDesc('lap.lap_codigo')
                 ->orderBy('sec.sec_nombre')
                 ->get()
@@ -382,20 +387,14 @@ class IntranetEquipoSeccionService
 
     public function programasEnLapso(?int $lapCodigo): Collection
     {
-        if ($lapCodigo === null) {
-            return collect();
-        }
+        $cacheKey = 'equipos_todos_programas_'.DbHelper::connection();
 
-        $cacheKey = 'equipos_programas_'.DbHelper::connection().'_lapso_'.$lapCodigo;
-
-        return Cache::remember($cacheKey, now()->addMinutes(30), function () use ($lapCodigo) {
+        return Cache::remember($cacheKey, now()->addMinutes(30), function () {
             try {
-                return $this->baseInscripcionQuery()
-                    ->where('lap.lap_codigo', $lapCodigo)
-                    ->select(['pro.pro_codigo', 'pro.pro_siglas', 'pro.pro_nombre'])
-                    ->whereNotNull('pro.pro_codigo')
-                    ->distinct()
-                    ->orderBy('pro.pro_siglas')
+                return DB::connection($this->academicConnection())
+                    ->table('programa')
+                    ->select(['pro_codigo', 'pro_siglas', 'pro_nombre'])
+                    ->orderBy('pro_siglas')
                     ->get();
             } catch (\Throwable) {
                 return collect();
@@ -409,47 +408,52 @@ class IntranetEquipoSeccionService
             return collect();
         }
 
-        $cacheKey = 'equipos_secciones_'.DbHelper::connection().'_lapso_'.$lapCodigo.'_programa_'.($programaCodigo ?? 'null');
+        $cacheKey = 'equipos_secciones_'.$lapCodigo.'_'.($programaCodigo ?? '0').'_'.DbHelper::connection();
 
         return Cache::remember($cacheKey, now()->addMinutes(30), function () use ($lapCodigo, $programaCodigo) {
             try {
-                $query = $this->baseInscripcionQuery()
-                    ->where('lap.lap_codigo', $lapCodigo)
-                    ->select(['sec.sec_codigo', 'sec.sec_nombre', 'pro.pro_siglas'])
-                    ->distinct();
+                $conn = $this->academicConnection();
+                $query = DB::connection($conn)
+                    ->table('seccion as sec')
+                    ->leftJoin('malla as mal', 'mal.mal_codigo', '=', 'sec.sec_cod_malla')
+                    ->leftJoin('programa as pro', 'pro.pro_codigo', '=', 'mal.mal_cod_programa')
+                    ->where('sec.sec_cod_lapso_academico', $lapCodigo)
+                    ->select(['sec.sec_codigo', 'sec.sec_nombre', 'pro.pro_siglas']);
+
+                $query->leftJoin('trayecto as tra', 'tra.tra_codigo', '=', 'mal.mal_cod_trayecto')
+                    ->addSelect('tra.tra_nombre');
 
                 if ($programaCodigo) {
                     $query->where('pro.pro_codigo', $programaCodigo);
                 }
 
-                return $query->orderBy('sec.sec_nombre')->get();
+                return $query->distinct()
+                    ->orderBy('sec.sec_nombre')
+                    ->get();
             } catch (\Throwable) {
                 return collect();
             }
         });
     }
 
-    public function trayectosEnLapso(?int $lapCodigo, ?int $programaCodigo = null): Collection
+    public function trayectosEnLapso(?int $lapCodigo = null, ?int $programaCodigo = null): Collection
     {
-        if ($lapCodigo === null) {
-            return collect();
-        }
+        $cacheKey = 'equipos_todos_trayectos_'.($programaCodigo ?? '0').'_'.DbHelper::connection();
 
-        $cacheKey = 'equipos_trayectos_'.DbHelper::connection().'_lapso_'.$lapCodigo.'_programa_'.($programaCodigo ?? 'null');
-
-        return Cache::remember($cacheKey, now()->addMinutes(30), function () use ($lapCodigo, $programaCodigo) {
+        return Cache::remember($cacheKey, now()->addMinutes(30), function () use ($programaCodigo) {
             try {
-                $query = $this->baseInscripcionQuery()
-                    ->where('lap.lap_codigo', $lapCodigo)
-->select(['tra.tra_codigo', 'tra.tra_nombre'])
-                    ->whereNotNull('tra.tra_codigo')
-                    ->distinct();
+                $query = DB::connection($this->academicConnection())
+                    ->table('trayecto as tra')
+                    ->select(['tra.tra_codigo', 'tra.tra_nombre']);
 
                 if ($programaCodigo) {
-                    $query->where('pro.pro_codigo', $programaCodigo);
+                    $query->join('malla as mal', 'mal.mal_cod_trayecto', '=', 'tra.tra_codigo')
+                        ->where('mal.mal_cod_programa', $programaCodigo);
                 }
 
-                return $query->orderBy('tra.tra_nombre')->get();
+                return $query->distinct()
+                    ->orderBy('tra.tra_nombre')
+                    ->get();
             } catch (\Throwable) {
                 return collect();
             }
@@ -468,10 +472,20 @@ class IntranetEquipoSeccionService
         }
 
         try {
-            $query = $this->baseInscripcionQuery()
+            $conn = $this->academicConnection();
+            $query = DB::connection($conn)
+                ->table('seccion as sec')
+                ->join('lapso_academico as lap', 'lap.lap_codigo', '=', 'sec.sec_cod_lapso_academico')
+                ->leftJoin('malla as mal', 'mal.mal_codigo', '=', 'sec.sec_cod_malla')
+                ->leftJoin('programa as pro', 'pro.pro_codigo', '=', 'mal.mal_cod_programa')
+                ->leftJoin('trayecto as tra', 'tra.tra_codigo', '=', 'mal.mal_cod_trayecto')
                 ->where('lap.lap_codigo', $lapCodigo)
                 ->where('sec.sec_codigo', $secCodigo)
-                ->select(['lap.lap_nombre', 'sec.sec_nombre', 'pro.pro_siglas', 'pro.pro_nombre', 'tra.tra_codigo', 'tra.tra_nombre as trayecto_nombre']);
+                ->select([
+                    'lap.lap_nombre', 'sec.sec_nombre',
+                    'pro.pro_siglas', 'pro.pro_nombre',
+                    'tra.tra_codigo', 'tra.tra_nombre as trayecto_nombre',
+                ]);
 
             if ($proCodigo) {
                 $query->where('pro.pro_codigo', $proCodigo);
