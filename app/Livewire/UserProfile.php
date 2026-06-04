@@ -7,7 +7,7 @@ use Livewire\Component;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 
-class UserProfileManager extends Component
+class UserProfile extends Component
 {
     public $nombre;
     public $apellido;
