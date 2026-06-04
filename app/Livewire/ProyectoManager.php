@@ -17,41 +17,41 @@ class ProyectoManager extends Component
     use WithFileUploads;
     use WithPagination;
 
-    public string $listTab = 'gestion';
+    public ?string $listTab = 'gestion';
 
-    public string $titulo = '';
+    public ?string $titulo = '';
 
-    public string $resumen = '';
+    public ?string $resumen = '';
 
-    public string $fecha_subida = '';
+    public ?string $fecha_subida = '';
 
     public bool $asignacion_ct = false;
 
-    public string $calificacion = '';
+    public ?string $calificacion = '';
 
-    public string $fecha_aprobacion = '';
+    public ?string $fecha_aprobacion = '';
 
-    public string $linea_investigacion_id = '';
+    public ?string $linea_investigacion_id = '';
 
-    public string $metodologia_id = '';
+    public ?string $metodologia_id = '';
 
-    public string $tipo_publicacion_id = '';
+    public ?string $tipo_publicacion_id = '';
 
-    public string $tipo_investigacion_id = '';
+    public ?string $tipo_investigacion_id = '';
 
-    public string $comunidad_id = '';
+    public ?string $comunidad_id = '';
 
-    public string $equipo_seccion_clave = '';
+    public ?string $equipo_seccion_clave = '';
 
-    public string $filterLapsoEquipo = '';
+    public ?string $filterLapsoEquipo = '';
 
-    public string $filterProgramaEquipo = '';
+    public ?string $filterProgramaEquipo = '';
 
-    public string $filterSeccionEquipo = '';
+    public ?string $filterSeccionEquipo = '';
 
-    public string $filterEstadoList = '';
+    public ?string $filterEstadoList = '';
 
-    public string $filterComunidadList = '';
+    public ?string $filterComunidadList = '';
 
     public array $archivos_componentes = [];
 
@@ -59,11 +59,11 @@ class ProyectoManager extends Component
 
     public $archivo_proyecto = null;
 
-    public string $archivo_actual = '';
+    public ?string $archivo_actual = '';
 
-    public string $search = '';
+    public ?string $search = '';
 
-    public string $motivo_rechazo = '';
+    public ?string $motivo_rechazo = '';
 
     public ?int $editingId = null;
 

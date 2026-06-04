@@ -238,7 +238,7 @@ class ProyectoGestionService
             'equipo_seccion_clave' => $item->equipo_ref ?? '',
             'filterLapsoEquipo' => $partes ? (string) $partes['lap_codigo'] : '',
             'archivos_actuales' => $archivos,
-            'archivo_actual' => $item->archivo_path,
+            'archivo_actual' => $item->archivo_path ?? '',
         ];
     }
 
