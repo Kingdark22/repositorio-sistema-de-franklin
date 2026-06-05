@@ -191,9 +191,11 @@
                         <input type="text" wire:model="org_cargo" style="width: 90%;">
                         @error('org_cargo')<br><span style="color:red;font-size:10px;">{{ $message }}</span>@enderror
                     </td>
+                </tr>
+                <tr>
                     <td><b>Direcci&oacute;n:</b></td>
-                    <td>
-                        <textarea wire:model="org_direccion" rows="2" style="width: 90%; height: 50px;"></textarea>
+                    <td colspan="3">
+                        <textarea wire:model="org_direccion" rows="2" style="width: 95%; height: 50px;"></textarea>
                         @error('org_direccion')<br><span style="color:red;font-size:10px;">{{ $message }}</span>@enderror
                     </td>
                 </tr>
@@ -310,11 +312,11 @@
                 <thead>
                     <tr style="background-color: #8bb2b7; color: #000; font-weight: bold;">
                         <th width="5%">N&deg;</th>
-                        <th width="25%">Nombre</th>
-                        <th width="12%">RIF</th>
-                        <th width="12%">Cargo</th>
-                        <th width="25%">Direcci&oacute;n</th>
-                        <th width="11%">Contacto</th>
+                        <th width="20%">Nombre</th>
+                        <th width="10%">RIF</th>
+                        <th width="10%">Cargo</th>
+                        <th width="30%">Direcci&oacute;n</th>
+                        <th width="15%">Contacto</th>
                         <th width="10%">Acciones</th>
                     </tr>
                 </thead>
