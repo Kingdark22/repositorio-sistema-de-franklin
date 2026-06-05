@@ -84,7 +84,6 @@ Route::middleware(['auth', 'active.role'])->group(function () {
         Route::view('/proyectos/gestion', 'proyectos.index')->name('proyectos.gestion');
     });
 
-    Route::view('/publicaciones/publicar', 'publicaciones.publicar')->name('publicaciones.publicar');
     Route::view('/publicaciones', 'publicaciones.index')->name('publicaciones.index');
 
     Route::get('/proyectos/crear', function () {

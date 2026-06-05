@@ -35,6 +35,10 @@ class ComunidadManager extends Component
 
     public string $anio = '';
 
+    public string $nombre_encargado = '';
+    public string $apellido_encargado = '';
+    public string $telefono_encargado = '';
+
     protected function rules(): array
     {
         return [
@@ -45,6 +49,9 @@ class ComunidadManager extends Component
             'prefijo_telefono' => 'required|in:0424,0414,0412,0422,0416,0426',
             'numero_telefono' => 'required|digits:7',
             'anio' => 'nullable|string|max:32',
+            'nombre_encargado' => 'nullable|string|max:255',
+            'apellido_encargado' => 'nullable|string|max:255',
+            'telefono_encargado' => 'nullable|string|max:50',
         ];
     }
 
@@ -91,7 +98,7 @@ class ComunidadManager extends Component
             return;
         }
 
-        $this->reset(['editingId', 'nombre', 'direccion', 'rif', 'correo', 'numero_telefono', 'prefijo_telefono', 'anio']);
+        $this->reset(['editingId', 'nombre', 'direccion', 'rif', 'correo', 'numero_telefono', 'prefijo_telefono', 'anio', 'nombre_encargado', 'apellido_encargado', 'telefono_encargado']);
         $this->prefijo_telefono = '0424';
         $this->resetValidation();
 
@@ -133,6 +140,9 @@ class ComunidadManager extends Component
 
         $this->direccion = $comunidad->direccion ?? '';
         $this->anio = $comunidad->anio ?? '';
+        $this->nombre_encargado = $comunidad->nombre_encargado ?? '';
+        $this->apellido_encargado = $comunidad->apellido_encargado ?? '';
+        $this->telefono_encargado = $comunidad->telefono_encargado ?? '';
         $this->viewMode = 'form';
         $this->dispatch('refresh-icons');
     }
@@ -173,6 +183,9 @@ class ComunidadManager extends Component
             'numero_telefono' => $this->prefijo_telefono . $this->numero_telefono,
             'direccion' => $this->direccion,
             'anio' => $this->anio !== '' ? $this->anio : null,
+            'nombre_encargado' => $this->nombre_encargado ?: '-',
+            'apellido_encargado' => $this->apellido_encargado ?: '-',
+            'telefono_encargado' => $this->telefono_encargado ?: '-',
         ];
 
         Comunidad::guardar($payload, $this->editingId);

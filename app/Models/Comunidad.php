@@ -19,5 +19,8 @@ class Comunidad extends RepositorioModel
         'numero_telefono',
         'direccion',
         'anio',
+        'nombre_encargado',
+        'apellido_encargado',
+        'telefono_encargado',
     ];
 }

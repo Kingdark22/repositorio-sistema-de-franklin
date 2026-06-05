@@ -18,6 +18,7 @@ class OrganizacionManager extends Component
 
     public string $org_nombre    = '';
     public string $org_rif       = '';
+    public string $org_correo    = '';
     public string $org_direccion = '';
     public string $org_cargo     = '';
 
@@ -93,6 +94,7 @@ class OrganizacionManager extends Component
         $this->org_nombre_key        = $org->nombre;
         $this->org_nombre            = $org->nombre;
         $this->org_rif               = $org->rif       ?? '';
+        $this->org_correo            = $org->correo    ?? '';
         $this->org_direccion         = $org->direccion ?? '';
         $this->org_cargo             = $org->cargo     ?? '';
         $this->org_nombre_contacto   = $org->nombre_contacto   ?? '';
@@ -197,6 +199,7 @@ class OrganizacionManager extends Component
         $this->validate([
             'org_nombre'           => 'required|min:3|max:255',
             'org_rif'              => 'nullable|max:20',
+            'org_correo'           => 'nullable|email|max:255',
             'org_direccion'        => 'nullable|max:1000',
             'org_cargo'            => 'nullable|max:255',
             'org_nombre_contacto'  => 'nullable|max:255',
@@ -212,6 +215,7 @@ class OrganizacionManager extends Component
         $orgPayload = [
             'nombre'            => $nombreNuevo,
             'rif'               => $rifNuevo,
+            'correo'            => $this->org_correo ? trim($this->org_correo) : null,
             'direccion'         => $dirNueva,
             'cargo'             => $cargoNuevo,
             'nombre_contacto'   => $this->org_nombre_contacto ? trim($this->org_nombre_contacto) : null,
@@ -220,7 +224,11 @@ class OrganizacionManager extends Component
         ];
 
         if ($this->org_nombre_key) {
-            Organizacion::where('nombre', $this->org_nombre_key)->update($orgPayload);
+            $org = Organizacion::where('nombre', $this->org_nombre_key)->first();
+            if ($org) {
+                $org->fill($orgPayload);
+                $org->save();
+            }
 
             foreach ($this->departamentosForm as $d) {
                 if ($d['is_deleted'] ?? false) {
@@ -238,25 +246,26 @@ class OrganizacionManager extends Component
                     ]);
                     Organizacion::create($orgPayload + ['dep_codigo' => $dep->id]);
                 } else {
-                    $depData = [
-                        'nombre' => $d['nombre'],
-                        'cargo'  => $d['cargo'] ?: null,
-                    ];
-                    if (!empty($d['nombre_contacto']))   $depData['nombre_contacto'] = $d['nombre_contacto'];
-                    if (!empty($d['apellido_contacto'])) $depData['apellido_contacto'] = $d['apellido_contacto'];
-                    if (!empty($d['numero_contacto']))   $depData['numero_contacto'] = $d['numero_contacto'];
-                    Departamento::where('id', $d['id'])->update($depData);
+                    $dep = Departamento::where('id', $d['id'])->first();
+                    if ($dep) {
+                        $dep->nombre            = $d['nombre'];
+                        $dep->cargo             = $d['cargo'] ?: null;
+                        $dep->nombre_contacto   = $d['nombre_contacto'] ?? null;
+                        $dep->apellido_contacto = $d['apellido_contacto'] ?? null;
+                        $dep->numero_contacto   = $d['numero_contacto'] ?? null;
+                        $dep->save();
+                    }
                 }
             }
 
-            $activeRowsCount = Organizacion::where('nombre', $nombreNuevo)->whereNotNull('dep_codigo')->count();
+            $activeRowsCount = Organizacion::where('nombre', $nombreNuevo)->whereNotNull('org_dep_codigo')->count();
             if ($activeRowsCount === 0) {
-                $hasNullRow = Organizacion::where('nombre', $nombreNuevo)->whereNull('dep_codigo')->exists();
+                $hasNullRow = Organizacion::where('nombre', $nombreNuevo)->whereNull('org_dep_codigo')->exists();
                 if (!$hasNullRow) {
                     Organizacion::create($orgPayload + ['dep_codigo' => null]);
                 }
             } else {
-                Organizacion::where('nombre', $nombreNuevo)->whereNull('dep_codigo')->delete();
+                Organizacion::where('nombre', $nombreNuevo)->whereNull('org_dep_codigo')->delete();
             }
 
             $this->notificar('Organización actualizada correctamente.');
@@ -327,6 +336,7 @@ class OrganizacionManager extends Component
         $this->org_nombre_key = '';
         $this->org_nombre     = '';
         $this->org_rif        = '';
+        $this->org_correo     = '';
         $this->org_direccion  = '';
         $this->org_cargo      = '';
         $this->org_nombre_contacto   = '';
@@ -415,7 +425,11 @@ class OrganizacionManager extends Component
         ];
 
         if ($this->editandoDepId) {
-            Departamento::where('id', $this->editandoDepId)->update($depData);
+            $dep = Departamento::where('id', $this->editandoDepId)->first();
+            if ($dep) {
+                $dep->fill($depData);
+                $dep->save();
+            }
             $this->notificar('Departamento actualizado.');
         } else {
             $dep = Departamento::create($depData);
@@ -431,7 +445,7 @@ class OrganizacionManager extends Component
                 'numero_contacto'   => $orgRow->numero_contacto,
             ]);
 
-            Organizacion::where('nombre', $orgRow->nombre)->whereNull('dep_codigo')->delete();
+            Organizacion::where('nombre', $orgRow->nombre)->whereNull('org_dep_codigo')->delete();
 
             $this->notificar('Departamento registrado.');
         }
@@ -450,7 +464,7 @@ class OrganizacionManager extends Component
         Departamento::find($id)->delete();
 
         if ($this->orgSeleccionadaNombre) {
-            $count = Organizacion::where('nombre', $this->orgSeleccionadaNombre)->whereNotNull('dep_codigo')->count();
+            $count = Organizacion::where('nombre', $this->orgSeleccionadaNombre)->whereNotNull('org_dep_codigo')->count();
             if ($count === 0) {
                 $orgRow = Organizacion::where('nombre', $this->orgSeleccionadaNombre)->first();
                 if ($orgRow) {
@@ -527,10 +541,11 @@ class OrganizacionManager extends Component
         $deps = collect();
         if ($this->orgSeleccionadaNombre) {
             $depCodigos = Organizacion::where('nombre', $this->orgSeleccionadaNombre)
-                ->whereNotNull('dep_codigo')
+                ->whereNotNull('org_dep_codigo')
+                ->get()
                 ->pluck('dep_codigo');
 
-            $deps = Departamento::whereIn('id', $depCodigos)
+            $deps = Departamento::whereIn('dep_codigo', $depCodigos)
                 ->orderBy('nombre')
                 ->get();
         }

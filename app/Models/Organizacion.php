@@ -15,6 +15,7 @@ class Organizacion extends RepositorioModel
     protected $fillable = [
         'nombre',
         'rif',
+        'correo',
         'direccion',
         'cargo',
         'dep_codigo',

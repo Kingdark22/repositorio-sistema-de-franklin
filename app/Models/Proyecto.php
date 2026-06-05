@@ -9,7 +9,6 @@ class Proyecto extends RepositorioModel
     protected $table = 'proyectos';
 
     protected $fillable = [
-        'titulo',
         'resumen',
         'fecha_subida',
         'asignacion_ct',
@@ -29,6 +28,21 @@ class Proyecto extends RepositorioModel
     ];
 
     protected static array $resumenEquipoCache = [];
+
+    public function getTituloAttribute(): string
+    {
+        if (!$this->equipo_ref) {
+            return '(sin título)';
+        }
+        $partes = app(\App\Services\GrupoProyectoService::class)->parsearClave($this->equipo_ref);
+        if ($partes && ($partes['tipo'] ?? '') === \App\Services\GrupoProyectoService::PREFIJO && !empty($partes['grp_codigo'])) {
+            $grupo = \App\Models\GrupoProyectoModulo::find($partes['grp_codigo']);
+            if ($grupo) {
+                return $grupo->grp_nombre;
+            }
+        }
+        return $this->equipo_ref;
+    }
 
     public function getEquipoResumenAttribute(): string
     {
@@ -75,8 +89,7 @@ class Proyecto extends RepositorioModel
 
         if ($search) {
             $query->where(function ($q) use ($search) {
-                $q->where('titulo', 'like', '%'.$search.'%')
-                    ->orWhere('resumen', 'like', '%'.$search.'%');
+                $q->where('resumen', 'like', '%'.$search.'%');
             });
         }
 
@@ -149,7 +162,7 @@ class Proyecto extends RepositorioModel
             ->where('estado_validacion', 'pendiente');
 
         if ($search) {
-            $query->where('titulo', 'like', '%'.$search.'%');
+            $query->where('resumen', 'like', '%'.$search.'%');
         }
 
         return $query;

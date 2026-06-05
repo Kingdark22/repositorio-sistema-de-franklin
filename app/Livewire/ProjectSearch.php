@@ -2,7 +2,9 @@
 
 namespace App\Livewire;
 
+use App\Models\Organizacion;
 use App\Services\ProyectoBusquedaService;
+use Illuminate\Support\Facades\Mail;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -34,12 +36,113 @@ class ProjectSearch extends Component
 
     public bool $isDetailsModalOpen = false;
 
+    public array $selectedProjects = [];
+
+    public bool $showEnvioModal = false;
+
+    public array $orgSeleccionadas = [];
+
+    public string $mensaje = '';
+    public string $tipoMensaje = 'success';
+
     public function mount(ProyectoBusquedaService $busqueda): void
     {
         $lapsos = $busqueda->datosVista([], 1)['lapsos'];
         if ($lapsos->isNotEmpty() && $this->lapsoFilter === '') {
             $this->lapsoFilter = (string) $lapsos->first()->lap_codigo;
         }
+    }
+
+    public function toggleProject(int $id): void
+    {
+        if (in_array($id, $this->selectedProjects)) {
+            $this->selectedProjects = array_values(array_diff($this->selectedProjects, [$id]));
+        } else {
+            $this->selectedProjects[] = $id;
+        }
+    }
+
+    public function abrirEnvio(): void
+    {
+        if (empty($this->selectedProjects)) {
+            $this->mensaje = 'Seleccione al menos un proyecto.';
+            $this->tipoMensaje = 'error';
+            return;
+        }
+        $this->orgSeleccionadas = [];
+        $this->showEnvioModal = true;
+    }
+
+    public function cerrarEnvio(): void
+    {
+        $this->showEnvioModal = false;
+        $this->orgSeleccionadas = [];
+    }
+
+    public function enviarCorreo(): void
+    {
+        if (empty($this->selectedProjects)) {
+            $this->mensaje = 'Seleccione al menos un proyecto.';
+            $this->tipoMensaje = 'error';
+            $this->showEnvioModal = false;
+            return;
+        }
+
+        $orgs = Organizacion::whereIn('org_dep_codigo', $this->orgSeleccionadas)->get()->unique('id');
+
+        if ($orgs->isEmpty()) {
+            $this->mensaje = 'Seleccione al menos una organización.';
+            $this->tipoMensaje = 'error';
+            return;
+        }
+
+        $proyectos = \App\Models\Proyecto::whereIn('pry_codigo', $this->selectedProjects)->get();
+
+        foreach ($orgs as $org) {
+            $correo = $org->correo;
+            if (empty($correo)) continue;
+
+            try {
+                Mail::raw($this->cuerpoCorreo($proyectos, $org), function ($msg) use ($correo, $org) {
+                    $msg->to($correo, $org->nombre)
+                        ->subject('Proyectos de interés - Repositorio UPTP');
+                });
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error("Error enviando correo a {$correo}: " . $e->getMessage());
+            }
+        }
+
+        $this->selectedProjects = [];
+        $this->showEnvioModal = false;
+        $this->orgSeleccionadas = [];
+        $this->mensaje = 'Correo(s) enviado(s) correctamente.';
+        $this->tipoMensaje = 'success';
+    }
+
+    protected function cuerpoCorreo($proyectos, $org): string
+    {
+        $lineas = [];
+        $lineas[] = "Estimado(a) {$org->nombre},";
+        $lineas[] = "";
+        $lineas[] = "A continuación se listan los proyectos que podrían ser de su interés:";
+        $lineas[] = "";
+
+        foreach ($proyectos as $i => $p) {
+            $num = $i + 1;
+            $lineas[] = "{$num}. {$p->titulo}";
+            $lineas[] = "   Resumen: " . strip_tags($p->resumen ?? 'Sin resumen');
+            $lineas[] = "";
+        }
+
+        $lineas[] = "Atentamente,";
+        $lineas[] = "Repositorio de Proyectos - UPTP";
+
+        return implode("\n", $lineas);
+    }
+
+    public function limpiarMensaje(): void
+    {
+        $this->mensaje = '';
     }
 
     public function updatingSearch(): void
@@ -130,9 +233,19 @@ class ProjectSearch extends Component
 
     public function render(ProyectoBusquedaService $busqueda)
     {
-        return view('livewire.project-search', $busqueda->datosVista(
-            $this->filtrosBusqueda(),
-            $this->getPage()
+        $organizaciones = collect();
+        try {
+            $organizaciones = Organizacion::query()
+                ->where('correo', '!=', '')
+                ->orderBy('nombre')
+                ->get();
+        } catch (\Throwable) {}
+
+        return view('livewire.project-search', array_merge(
+            $busqueda->datosVista($this->filtrosBusqueda(), $this->getPage()),
+            [
+                'organizaciones' => $organizaciones,
+            ]
         ));
     }
 

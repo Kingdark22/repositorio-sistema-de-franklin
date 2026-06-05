@@ -80,10 +80,10 @@ class ProyectoGestionService
 
         $query = Proyecto::with($this->relacionesProyecto())
             ->where('estado_validacion', 'pendiente')
-            ->where('titulo', 'like', '%'.$search.'%');
+            ->where('resumen', 'like', '%'.$search.'%');
 
         if ($clavesDocente !== null) {
-            $query->whereIn('equipo_ref', $clavesDocente);
+            $query->whereIn('pry_direccion_logica', $clavesDocente);
         }
 
         return $query->latest()->paginate(10, page: $page);
@@ -426,7 +426,7 @@ class ProyectoGestionService
     public function paginarProyectos(array $filtros, int $page): LengthAwarePaginator
     {
         return Proyecto::with($this->relacionesProyecto())
-            ->where('titulo', 'like', '%'.($filtros['search'] ?? '').'%')
+            ->when(($filtros['search'] ?? '') !== '', fn ($q) => $q->where('resumen', 'like', '%'.$filtros['search'].'%'))
             ->when(($filtros['estado'] ?? '') !== '', fn ($q) => $q->where('estado_validacion', $filtros['estado']))
             ->when(($filtros['comunidad'] ?? '') !== '', fn ($q) => $q->where('comunidad_id', $filtros['comunidad']))
             ->latest()

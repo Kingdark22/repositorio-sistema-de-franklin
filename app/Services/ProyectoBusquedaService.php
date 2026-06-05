@@ -115,8 +115,7 @@ class ProyectoBusquedaService
         $termino = trim((string) ($filtros['search'] ?? ''));
         if ($termino !== '') {
             $query->where(function (Builder $q) use ($termino) {
-                $q->where('titulo', 'like', '%'.$termino.'%')
-                    ->orWhere('resumen', 'like', '%'.$termino.'%');
+                $q->where('resumen', 'like', '%'.$termino.'%');
             });
         }
 
@@ -213,7 +212,7 @@ class ProyectoBusquedaService
 
         match ($equipoFiltro['tipo']) {
             'exacto' => $query->where('equipo_ref', $equipoFiltro['valor']),
-            'lista' => $query->whereIn('equipo_ref', $equipoFiltro['valor']),
+            'lista' => $query->whereIn('pry_direccion_logica', $equipoFiltro['valor']),
             'prefijo' => $query->where('equipo_ref', 'like', $equipoFiltro['valor'].'%'),
             default => null,
         };

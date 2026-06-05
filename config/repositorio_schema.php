@@ -9,7 +9,6 @@ return [
         'primary_key' => 'pry_codigo',
         'columns' => [
             'id'                  => 'pry_codigo',
-            'titulo'              => 'pry_titulo',
             'resumen'             => 'pry_resumen',
             'fecha_subida'        => 'pry_fecha_subida',
             'asignacion_ct'       => 'pry_asignacion_ct',
@@ -39,12 +38,16 @@ return [
     'comunidades' => [
         'primary_key' => 'com_codigo',
         'columns' => [
-            'id'             => 'com_codigo',
-            'nombre'         => 'com_nombre',
-            'rif'            => 'com_rif',
-            'correo'         => 'com_correo',
-            'numero_telefono'=> 'com_numero_telefono',
-            'direccion'      => 'com_direccion',
+            'id'                => 'com_codigo',
+            'nombre'            => 'com_nombre',
+            'rif'               => 'com_rif',
+            'correo'            => 'com_correo',
+            'numero_telefono'   => 'com_numero_telefono',
+            'direccion'         => 'com_direccion',
+            'nombre_encargado'  => 'com_nombre_encargado',
+            'apellido_encargado'=> 'com_apellido_encargado',
+            'telefono_encargado'=> 'com_telefono_encargado',
+            'anio'              => 'anio',
         ],
     ],
 
@@ -134,6 +137,7 @@ return [
             'id'               => 'org_codigo',
             'nombre'           => 'org_nombre',
             'rif'              => 'org_rif',
+            'correo'           => 'org_correo',
             'direccion'        => 'org_direccion',
             'cargo'            => 'org_cargo',
             'dep_codigo'       => 'org_dep_codigo',

@@ -181,6 +181,11 @@
                     </td>
                 </tr>
                 <tr>
+                    <td><b>Correo:</b></td>
+                    <td>
+                        <input type="email" wire:model="org_correo" style="width: 90%;">
+                        @error('org_correo')<br><span style="color:red;font-size:10px;">{{ $message }}</span>@enderror
+                    </td>
                     <td><b>Cargo:</b></td>
                     <td>
                         <input type="text" wire:model="org_cargo" style="width: 90%;">

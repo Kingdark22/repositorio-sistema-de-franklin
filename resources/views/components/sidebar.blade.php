@@ -117,10 +117,6 @@ $nav = app(\App\Support\NavigationMenu::class)->flags(auth()->user());
                     <div class="arrow-icon"></div>
                 </div>
                 <div class="legacy-submenu">
-                    <a href="{{ route('publicaciones.publicar') }}"
-                        class="{{ request()->routeIs('publicaciones.publicar') ? 'active-sub' : '' }}">
-                        Publicar Proyectos
-                    </a>
                     <a href="{{ route('publicaciones.index') }}"
                         class="{{ request()->routeIs('publicaciones.index') ? 'active-sub' : '' }}">
                         Proyectos Publicados
