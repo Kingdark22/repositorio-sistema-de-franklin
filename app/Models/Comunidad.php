@@ -18,9 +18,23 @@ class Comunidad extends RepositorioModel
         'correo',
         'numero_telefono',
         'direccion',
+        'dir_codigo',
+        'trayecto',
+        'programa',
+        'seccion',
         'anio',
         'nombre_encargado',
         'apellido_encargado',
         'telefono_encargado',
     ];
+
+    public function contactos()
+    {
+        return $this->hasMany(ComunidadContacto::class, 'com_codigo', 'com_codigo');
+    }
+
+    public function direccion()
+    {
+        return $this->belongsTo(Direccion::class, 'dir_codigo');
+    }
 }

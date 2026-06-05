@@ -2,23 +2,23 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 
-class Direccion extends RepositorioModel
+class Direccion extends Model
 {
-    use HasFactory;
-    
-    protected $table = 'direcciones';
+    protected $primaryKey = 'dir_codigo';
 
-    protected $fillable = ['direccion_exacta', 'municipio_id'];
+    protected $fillable = ['dir_nombre', 'mun_codigo'];
+
+    protected $table = 'direcciones';
 
     public function municipio()
     {
-        return $this->belongsTo(Municipio::class);
+        return $this->belongsTo(Municipio::class, 'mun_codigo');
     }
 
-    public function comunidades()
+    public function comunidad()
     {
-        return $this->hasMany(Comunidad::class);
+        return $this->hasOne(Comunidad::class, 'dir_codigo');
     }
 }

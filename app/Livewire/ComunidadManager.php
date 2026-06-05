@@ -3,14 +3,11 @@
 namespace App\Livewire;
 
 use App\Models\Comunidad;
-use App\Models\Trayecto;
+use App\Services\ComunidadGestionService;
 use App\Services\IntranetProfessorService;
 use Livewire\Component;
 use Livewire\WithPagination;
-use Livewire\Attributes\Lazy;
-use Illuminate\Support\Facades\Cache;
 
-#[Lazy]
 class ComunidadManager extends Component
 {
     use WithPagination;
@@ -23,8 +20,6 @@ class ComunidadManager extends Component
 
     public string $nombre = '';
 
-    public string $direccion = '';
-
     public string $rif = '';
 
     public string $correo = '';
@@ -33,33 +28,107 @@ class ComunidadManager extends Component
 
     public string $prefijo_telefono = '0424';
 
-    public string $anio = '';
+    public string $trayecto = '';
+
+    public string $programa = '';
+
+    public string $seccion = '';
+
+    public string $estado_id = '';
+
+    public string $municipio_id = '';
+
+    public string $dir_nombre = '';
 
     public string $nombre_encargado = '';
+
     public string $apellido_encargado = '';
+
     public string $telefono_encargado = '';
 
-    protected function rules(): array
+    public array $contactos = [];
+
+    public function updatedPrograma(): void
     {
-        return [
-            'nombre' => 'required|string|max:255',
-            'rif' => 'nullable|string|max:50',
-            'direccion' => 'required|string|max:500',
-            'correo' => 'nullable|email|max:150',
-            'prefijo_telefono' => 'required|in:0424,0414,0412,0422,0416,0426',
-            'numero_telefono' => 'required|digits:7',
-            'anio' => 'nullable|string|max:32',
-            'nombre_encargado' => 'nullable|string|max:255',
-            'apellido_encargado' => 'nullable|string|max:255',
-            'telefono_encargado' => 'nullable|string|max:50',
-        ];
+        $this->seccion = '';
+        $this->trayecto = '';
+    }
+
+    public function updatedEstadoId(): void
+    {
+        $this->municipio_id = '';
+    }
+
+    private function validarContactoCorreoRealtime(int $index): void
+    {
+        $correo = trim($this->contactos[$index]['correo'] ?? '');
+        $correo_conf = trim($this->contactos[$index]['correo_confirmacion'] ?? '');
+
+        $this->resetErrorBag("contactos.{$index}.correo_confirmacion");
+        $this->resetErrorBag("contactos.{$index}.correo");
+
+        if ($correo !== '' && !filter_var($correo, FILTER_VALIDATE_EMAIL)) {
+            $this->addError("contactos.{$index}.correo", 'Debe ingresar un correo electrónico válido.');
+            return;
+        }
+
+        if ($correo === '') {
+            return;
+        }
+
+        if ($correo_conf !== '' && !filter_var($correo_conf, FILTER_VALIDATE_EMAIL)) {
+            $this->addError("contactos.{$index}.correo_confirmacion", 'Debe ingresar un correo electrónico válido.');
+            return;
+        }
+
+        if ($correo_conf !== '') {
+            if ($correo !== $correo_conf) {
+                $this->addError("contactos.{$index}.correo_confirmacion", 'La confirmación del correo no coincide.');
+            }
+        }
+    }
+
+    public function updated(string $propertyName, ComunidadGestionService $gestion): void
+    {
+        if (str_starts_with($propertyName, 'contactos.')) {
+            preg_match('/contactos\.(\d+)\.(correo|correo_confirmacion)/', $propertyName, $matches);
+            if ($matches) {
+                $index = (int)$matches[1];
+                $this->validarContactoCorreoRealtime($index);
+            } else {
+                try {
+                    $this->validateOnly($propertyName, $gestion->reglasValidacion());
+                } catch (\Illuminate\Validation\ValidationException $e) {
+                    $this->setErrorBag($e->validator->errors());
+                }
+            }
+        } else {
+            try {
+                $this->validateOnly($propertyName, $gestion->reglasValidacion());
+            } catch (\Illuminate\Validation\ValidationException $e) {
+                $this->setErrorBag($e->validator->errors());
+            }
+        }
+    }
+
+    public function agregarContacto(): void
+    {
+        $this->contactos[] = ['nombre' => '', 'apellido' => '', 'correo' => '', 'correo_confirmacion' => '', 'prefijo' => '0424', 'telefono' => '', 'cargo' => ''];
+    }
+
+    public function quitarContacto(int $index): void
+    {
+        unset($this->contactos[$index]);
+        $this->contactos = array_values($this->contactos);
     }
 
     protected function messages(): array
     {
         return [
             'nombre.required' => 'El nombre de la comunidad es obligatorio',
-            'direccion.required' => 'La dirección es obligatoria',
+            'estado_id.required' => 'Debe seleccionar un estado',
+            'municipio_id.required' => 'Debe seleccionar un municipio',
+            'dir_nombre.required' => 'La dirección exacta es obligatoria',
             'correo.email' => 'El correo debe ser una dirección válida',
             'prefijo_telefono.required' => 'El prefijo del teléfono es obligatorio',
             'numero_telefono.required' => 'El teléfono es obligatorio',
@@ -98,20 +167,20 @@ class ComunidadManager extends Component
             return;
         }
 
-        $this->reset(['editingId', 'nombre', 'direccion', 'rif', 'correo', 'numero_telefono', 'prefijo_telefono', 'anio', 'nombre_encargado', 'apellido_encargado', 'telefono_encargado']);
+        $this->reset(['editingId', 'nombre', 'rif', 'correo', 'numero_telefono', 'prefijo_telefono', 'trayecto', 'programa', 'seccion', 'contactos', 'estado_id', 'municipio_id', 'dir_nombre', 'nombre_encargado', 'apellido_encargado', 'telefono_encargado']);
         $this->prefijo_telefono = '0424';
         $this->resetValidation();
 
         $cfg = auth()->user()?->profesorProyectoModulo();
         if ($cfg && ! empty($cfg->ppm_anio)) {
-            $this->anio = (string) $cfg->ppm_anio;
+            $this->trayecto = (string) $cfg->ppm_anio;
         }
 
         $this->viewMode = 'form';
         $this->dispatch('refresh-icons');
     }
 
-    public function edit(int $id): void
+    public function edit(int $id, ComunidadGestionService $gestion): void
     {
         if (! $this->puedeGestionar()) {
             session()->flash('message_error', 'No tiene permiso para editar comunidades.');
@@ -119,13 +188,15 @@ class ComunidadManager extends Component
         }
 
         $this->resetValidation();
-        $comunidad = Comunidad::query()->whereKey($id)->firstOrFail();
+        $datos = $gestion->cargarParaEdicion($id);
         $this->editingId = $id;
-        $this->nombre = $comunidad->nombre;
-        $this->rif = $comunidad->rif;
-        $this->correo = $comunidad->correo;
+        $this->fill($datos);
 
-        $telefonoCompleto = $comunidad->numero_telefono;
+        $this->nombre_encargado = $datos['nombre_encargado'] ?? '';
+        $this->apellido_encargado = $datos['apellido_encargado'] ?? '';
+        $this->telefono_encargado = $datos['telefono_encargado'] ?? '';
+
+        $telefonoCompleto = $datos['numero_telefono'];
         $prefijos = ['0424', '0414', '0412', '0422', '0416', '0426'];
         $this->prefijo_telefono = '0424';
         $this->numero_telefono = $telefonoCompleto;
@@ -138,58 +209,95 @@ class ComunidadManager extends Component
             }
         }
 
-        $this->direccion = $comunidad->direccion ?? '';
-        $this->anio = $comunidad->anio ?? '';
-        $this->nombre_encargado = $comunidad->nombre_encargado ?? '';
-        $this->apellido_encargado = $comunidad->apellido_encargado ?? '';
-        $this->telefono_encargado = $comunidad->telefono_encargado ?? '';
         $this->viewMode = 'form';
         $this->dispatch('refresh-icons');
     }
 
-    public function placeholder()
+    public function guardarContactosAhora(ComunidadGestionService $gestion): void
     {
-        return <<<'HTML'
-        <div class="p-6 w-full bg-white rounded-lg shadow-sm border border-slate-100 dark:bg-slate-900 dark:border-slate-800">
-            <div class="animate-pulse space-y-6">
-                <div class="flex justify-between items-center">
-                    <div class="h-6 bg-slate-200 dark:bg-slate-700 rounded w-1/4"></div>
-                    <div class="h-10 bg-slate-200 dark:bg-slate-700 rounded w-32"></div>
-                </div>
-                <div class="h-10 bg-slate-100 dark:bg-slate-800 rounded w-full"></div>
-                <div class="space-y-3">
-                    <div class="h-12 bg-slate-50 dark:bg-slate-800/50 rounded w-full"></div>
-                    <div class="h-12 bg-slate-50 dark:bg-slate-800/50 rounded w-full"></div>
-                    <div class="h-12 bg-slate-50 dark:bg-slate-800/50 rounded w-full"></div>
-                </div>
-            </div>
-        </div>
-        HTML;
+        if (! $this->puedeGestionar()) {
+            session()->flash('message_error', 'No tiene permiso para guardar.');
+            return;
+        }
+
+        $this->validate([
+            'nombre' => 'required|string|max:255',
+            'estado_id' => 'required|integer|exists:estados,est_codigo',
+            'municipio_id' => 'required|integer|exists:municipios,mun_codigo',
+            'dir_nombre' => 'required|string|max:500',
+            'contactos' => 'nullable|array',
+            'contactos.*.nombre' => 'required|string|max:255',
+            'contactos.*.apellido' => 'nullable|string|max:255',
+            'contactos.*.correo' => 'nullable|email|max:150',
+            'contactos.*.correo_confirmacion' => 'nullable|email|max:150',
+            'contactos.*.prefijo' => 'nullable|in:0424,0414,0412,0422,0416,0426',
+            'contactos.*.telefono' => 'nullable|string|max:50',
+            'contactos.*.cargo' => 'nullable|string|max:100',
+        ]);
+
+        foreach ($this->contactos as $i => $contacto) {
+            $this->validarContactoCorreoRealtime($i);
+        }
+        if ($this->getErrorBag()->isNotEmpty()) {
+            return;
+        }
+
+        $gestion->guardar($this->editingId, [
+            'nombre' => $this->nombre,
+            'rif' => $this->rif,
+            'correo' => $this->correo,
+            'prefijo_telefono' => $this->prefijo_telefono,
+            'numero_telefono' => $this->numero_telefono,
+            'estado_id' => $this->estado_id,
+            'municipio_id' => $this->municipio_id,
+            'dir_nombre' => $this->dir_nombre,
+            'trayecto' => $this->trayecto,
+            'programa' => $this->programa,
+            'seccion' => $this->seccion,
+            'contactos' => $this->contactos,
+        ]);
+
+        if ($this->editingId === null) {
+            $this->editingId = Comunidad::where('nombre', $this->nombre)->latest()->value('com_codigo');
+        }
+
+        session()->flash('message', 'Contactos guardados correctamente.');
+        $this->dispatch('refresh-icons');
     }
 
-    public function save(): void
+    public function save(ComunidadGestionService $gestion): void
     {
         if (! $this->puedeGestionar()) {
             session()->flash('message_error', 'No tiene permiso para guardar comunidades.');
             return;
         }
 
-        $this->validate();
+        $this->validate($gestion->reglasValidacion());
 
-        $payload = [
+        foreach ($this->contactos as $i => $contacto) {
+            $this->validarContactoCorreoRealtime($i);
+        }
+        if ($this->getErrorBag()->isNotEmpty()) {
+            return;
+        }
+
+        $gestion->guardar($this->editingId, [
             'nombre' => $this->nombre,
             'rif' => $this->rif,
             'correo' => $this->correo,
-            'numero_telefono' => $this->prefijo_telefono . $this->numero_telefono,
-            'direccion' => $this->direccion,
-            'anio' => $this->anio !== '' ? $this->anio : null,
+            'prefijo_telefono' => $this->prefijo_telefono,
+            'numero_telefono' => $this->numero_telefono,
+            'estado_id' => $this->estado_id,
+            'municipio_id' => $this->municipio_id,
+            'dir_nombre' => $this->dir_nombre,
+            'trayecto' => $this->trayecto,
+            'programa' => $this->programa,
+            'seccion' => $this->seccion,
+            'contactos' => $this->contactos,
             'nombre_encargado' => $this->nombre_encargado ?: '-',
             'apellido_encargado' => $this->apellido_encargado ?: '-',
             'telefono_encargado' => $this->telefono_encargado ?: '-',
-        ];
-
-        Comunidad::guardar($payload, $this->editingId);
-        Cache::forget('gestion_comunidades_ordenadas');
+        ]);
 
         session()->flash('message', 'Comunidad guardada correctamente.');
         $this->viewMode = 'list';
@@ -202,61 +310,33 @@ class ComunidadManager extends Component
         $this->dispatch('refresh-icons');
     }
 
-    public function delete(int $id): void
+    public function delete(int $id, ComunidadGestionService $gestion): void
     {
         if (! $this->puedeGestionar()) {
             session()->flash('message_error', 'No tiene permiso para eliminar comunidades.');
             return;
         }
 
-        Comunidad::findOrFail($id)->delete();
-        Cache::forget('gestion_comunidades_ordenadas');
+        $gestion->eliminar($id);
         session()->flash('message', 'Comunidad eliminada correctamente.');
     }
 
-    public function with(): array
+    public function with(ComunidadGestionService $gestion): array
     {
-        $termino = trim($this->search);
+        $listado = $gestion->datosVistaListado([
+            'search' => trim($this->search),
+        ], $this->getPage());
 
-        $comunidades = Comunidad::query()
-            ->when($termino !== '', function ($q) use ($termino) {
-                $q->where('nombre', 'like', '%' . $termino . '%')
-                    ->orWhere('rif', 'like', '%' . $termino . '%')
-                    ->orWhere('direccion', 'like', '%' . $termino . '%');
-            })
-            ->orderByDesc((new Comunidad())->getKeyName())
-            ->paginate(10);
+        $formulario = $gestion->datosVistaFormulario($this->programa, $this->estado_id);
 
-        $trayectos = Cache::remember('trayectos_para_select', 3600, function () {
-            try {
-                $t = Trayecto::on(\App\Helpers\DbHelper::connection())
-                    ->whereNotNull('tra_nombre')
-                    ->orderBy('tra_nombre')
-                    ->get();
-            } catch (\Throwable) {
-                $t = collect();
-            }
-            if ($t->isEmpty()) {
-                $t = collect([
-                    (object) ['tra_nombre' => 'I'],
-                    (object) ['tra_nombre' => 'II'],
-                    (object) ['tra_nombre' => 'III'],
-                    (object) ['tra_nombre' => 'IV'],
-                ]);
-            }
-            return $t;
-        });
-
-        return [
-            'comunidades' => $comunidades,
+        return array_merge($listado, $formulario, [
             'puedeGestionar' => $this->puedeGestionar(),
             'lapsoVigente' => app(IntranetProfessorService::class)->lapsosActivos()->first(),
-            'trayectos' => $trayectos,
-        ];
+        ]);
     }
 
-    public function render()
+    public function render(ComunidadGestionService $gestion)
     {
-        return view('livewire.comunidad-manager', $this->with());
+        return view('livewire.comunidad-manager', $this->with($gestion));
     }
 }
