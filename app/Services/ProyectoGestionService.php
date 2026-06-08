@@ -22,6 +22,10 @@ use Illuminate\Validation\Rule;
 
 class ProyectoGestionService
 {
+    protected static array $roleCache = [];
+
+    protected static array $contextoEquipoCache = [];
+
     public function __construct(
         protected IntranetEquipoSeccionService $equipoSeccion,
         protected IntranetProfessorService $profesorIntranet,
@@ -161,8 +165,7 @@ class ProyectoGestionService
 
         if ($this->usaComponentesDocumentales()) {
             $datos['componentes_requeridos'] = $this->componentesRequeridos(
-                $estado['programa_id'] ?? null,
-                $estado['trayecto'] ?? ''
+                $estado['programa_id'] ?? null
             );
         } else {
             $datos['componentes_requeridos'] = collect();
@@ -319,7 +322,7 @@ class ProyectoGestionService
         }
 
         if ($this->usaComponentesDocumentales()) {
-            $componentes = $this->componentesRequeridos($datos['programa_id'] ?? null, $datos['trayecto'] ?? '');
+            $componentes = $this->componentesRequeridos($datos['programa_id'] ?? null);
             $documentos = [];
 
             if ($editingId && ! empty($archivosActuales)) {
@@ -404,10 +407,10 @@ class ProyectoGestionService
             'resumen' => 'required|min:10',
             'fecha_subida' => 'required|date',
             'asignacion_ct' => 'boolean',
-            'linea_investigacion_id' => ['required', Rule::exists(LineaInvestigacion::class, (new LineaInvestigacion())->getKeyName())],
-            'metodologia_id' => ['required', Rule::exists(MetodologiaInvestigacion::class, (new MetodologiaInvestigacion())->getKeyName())],
-            'tipo_publicacion_id' => ['required', Rule::exists(TipoPublicacion::class, (new TipoPublicacion())->getKeyName())],
-            'tipo_investigacion_id' => ['required', Rule::exists(TipoInvestigacion::class, (new TipoInvestigacion())->getKeyName())],
+            'linea_investigacion_id' => ['nullable', Rule::exists(LineaInvestigacion::class, (new LineaInvestigacion())->getKeyName())],
+            'metodologia_id' => ['nullable', Rule::exists(MetodologiaInvestigacion::class, (new MetodologiaInvestigacion())->getKeyName())],
+            'tipo_publicacion_id' => ['nullable', Rule::exists(TipoPublicacion::class, (new TipoPublicacion())->getKeyName())],
+            'tipo_investigacion_id' => ['nullable', Rule::exists(TipoInvestigacion::class, (new TipoInvestigacion())->getKeyName())],
             'comunidad_id' => ['required', Rule::exists(Comunidad::class, (new Comunidad())->getKeyName())],
             'equipo_seccion_clave' => [
                 'required',
@@ -437,7 +440,7 @@ class ProyectoGestionService
         }
 
         if ($this->usaComponentesDocumentales()) {
-            $componentes = $this->componentesRequeridos($estado['programa_id'] ?? null, $estado['trayecto'] ?? '');
+            $componentes = $this->componentesRequeridos($estado['programa_id'] ?? null);
             foreach ($componentes as $c) {
                 if ($c->es_obligatorio && ! isset($archivosActuales[$c->id])) {
                     $rules['archivos_componentes.'.$c->id] = 'required|file|max:20480';
@@ -470,16 +473,19 @@ class ProyectoGestionService
             ->paginate(10, page: $page);
     }
 
-    public function componentesRequeridos(mixed $programaId, string $trayecto): Collection
+    public function componentesRequeridos(mixed $programaId): Collection
     {
-        if (! $this->usaComponentesDocumentales() || ! $programaId || $trayecto === '') {
+        if (! $this->usaComponentesDocumentales() || ! $programaId) {
             return collect();
         }
 
-        return Componente::where('programa_id', $programaId)
-            ->where('anio', $trayecto)
-            ->where('estado_logico', true)
-            ->get();
+        $cacheKey = 'componentes_req_' . $programaId;
+
+        return Cache::remember($cacheKey, 3600, fn() =>
+            Componente::where('programa_id', $programaId)
+                ->where('estado_logico', true)
+                ->get()
+        );
     }
 
     public function comunidadesOrdenadas(): Collection
@@ -510,6 +516,11 @@ class ProyectoGestionService
      */
     protected function contextoEquipo(array $estado, string $cedula, bool $esAdmin): array
     {
+        $cacheKey = 'ctx_' . md5(serialize([$estado['filterLapsoEquipo'] ?? '', $estado['equipo_seccion_clave'] ?? '', $cedula]));
+        if (array_key_exists($cacheKey, static::$contextoEquipoCache)) {
+            return static::$contextoEquipoCache[$cacheKey];
+        }
+
         $gruposSvc = app(GrupoProyectoService::class);
         $lapFiltro = ($estado['filterLapsoEquipo'] ?? '') !== ''
             ? (int) $estado['filterLapsoEquipo']
@@ -535,7 +546,7 @@ class ProyectoGestionService
             $integrantes = $this->equipoSeccion->integrantes($clave);
         }
 
-        return [
+        return static::$contextoEquipoCache[$cacheKey] = [
             'equipos_disp' => $equiposDisp,
             'equipoValidado' => $equipoValidado,
             'integrantesEquipo' => $integrantes,
@@ -544,11 +555,16 @@ class ProyectoGestionService
 
     public function usuarioEsAdminEnSistema(?User $user): bool
     {
-        if ($user === null) {
-            return false;
+        $key = 'admin_' . ($user?->getKey() ?? 'null');
+        if (array_key_exists($key, static::$roleCache)) {
+            return static::$roleCache[$key];
         }
 
-        return in_array(
+        if ($user === null) {
+            return static::$roleCache[$key] = false;
+        }
+
+        return static::$roleCache[$key] = in_array(
             'administrador',
             array_keys(app(UserRoleService::class)->detectAvailableRoles($user)),
             true
@@ -557,87 +573,89 @@ class ProyectoGestionService
 
     public function usuarioPuedeRegistrar(?User $user): bool
     {
+        $key = 'registrar_' . ($user?->getKey() ?? 'null');
+        if (array_key_exists($key, static::$roleCache)) {
+            return static::$roleCache[$key];
+        }
+
         if ($user === null) {
-            return false;
+            return static::$roleCache[$key] = false;
         }
 
         $userRoleService = app(UserRoleService::class);
         $activeRole = $userRoleService->getActiveRole($user);
 
-        // Si hay un rol activo en sesión (simulado o real desde sesión)
         if ($activeRole !== null) {
             if ($userRoleService->roleMatches('administrador', $activeRole)) {
-                return true;
+                return static::$roleCache[$key] = true;
             }
             if ($userRoleService->roleMatches('estudiante', $activeRole)) {
-                // Si la simulación libre está permitida y estamos simulando estudiante, se concede el acceso
                 if ($userRoleService->allowsFreeSessionRoles()) {
-                    return true;
+                    return static::$roleCache[$key] = true;
                 }
-                // De lo contrario, si la simulación libre NO está permitida, se hace la comprobación real de intranet
-                return $this->equipoSeccion->estudiantePuedeRegistrar(trim((string) $user->usu_cedula));
+                return static::$roleCache[$key] = $this->equipoSeccion->estudiantePuedeRegistrar(trim((string) $user->usu_cedula));
             }
-            return false; // El rol activo está establecido, pero no es admin o estudiante para registrar
+            return static::$roleCache[$key] = false;
         }
 
-        // Si no hay rol activo en sesión, se recurre a los roles reales detectados de intranet
         $availableDetectedRoles = array_keys($userRoleService->detectAvailableRoles($user));
 
         if (in_array('administrador', $availableDetectedRoles, true)) {
-            return true;
+            return static::$roleCache[$key] = true;
         }
 
         if (in_array('estudiante', $availableDetectedRoles, true)) {
-            return $this->equipoSeccion->estudiantePuedeRegistrar(trim((string) $user->usu_cedula));
+            return static::$roleCache[$key] = $this->equipoSeccion->estudiantePuedeRegistrar(trim((string) $user->usu_cedula));
         }
 
-        return false;
+        return static::$roleCache[$key] = false;
     }
 
     public function usuarioPuedeValidar(?User $user): bool
     {
+        $key = 'validar_' . ($user?->getKey() ?? 'null');
+        if (array_key_exists($key, static::$roleCache)) {
+            return static::$roleCache[$key];
+        }
+
         if ($user === null) {
-            return false;
+            return static::$roleCache[$key] = false;
         }
 
         $userRoleService = app(UserRoleService::class);
         $activeRole = $userRoleService->getActiveRole($user);
 
-        // Si hay un rol activo en sesión (simulado o real desde sesión)
         if ($activeRole !== null) {
             if ($userRoleService->roleMatches('administrador', $activeRole)) {
-                return true;
+                return static::$roleCache[$key] = true;
             }
             if ($userRoleService->roleMatches('coordinador', $activeRole)) {
-                return true;
+                return static::$roleCache[$key] = true;
             }
             if ($userRoleService->roleMatches('profesor proyecto', $activeRole)) {
-                // Si la simulación libre está permitida y estamos simulando profesor proyecto, se concede el acceso
                 if ($userRoleService->allowsFreeSessionRoles()) {
-                    return true;
+                    return static::$roleCache[$key] = true;
                 }
-                // De lo contrario, si la simulación libre NO está permitida, se hace la comprobación real de intranet
-                return $this->profesorIntranet->esProfesorProyectoVigente(trim((string) $user->usu_cedula));
+                return static::$roleCache[$key] = $this->profesorIntranet->esProfesorProyectoVigente(trim((string) $user->usu_cedula));
             }
-            return false; // El rol activo está establecido, pero no es admin, coordinador o profesor para validar
+            return static::$roleCache[$key] = false;
         }
 
-        // Si no hay rol activo en sesión, se recurre a los roles reales detectados de intranet
         $availableDetectedRoles = array_keys($userRoleService->detectAvailableRoles($user));
 
         if (in_array('administrador', $availableDetectedRoles, true)) {
-            return true;
+            return static::$roleCache[$key] = true;
         }
 
         if (in_array('coordinador', $availableDetectedRoles, true)) {
-            return true;
+            return static::$roleCache[$key] = true;
         }
 
         if (in_array('profesor proyecto', $availableDetectedRoles, true)) {
-            return $this->profesorIntranet->esProfesorProyectoVigente(trim((string) $user->usu_cedula));
+            return static::$roleCache[$key] = $this->profesorIntranet->esProfesorProyectoVigente(trim((string) $user->usu_cedula));
         }
 
-        return false;
+        return static::$roleCache[$key] = false;
     }
 
     public function usuarioPuedeValidarProyecto(?User $user, Proyecto $proyecto): bool

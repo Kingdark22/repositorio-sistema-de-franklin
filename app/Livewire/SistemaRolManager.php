@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Models\RolExterno;
 use App\Models\UsuarioExterno;
+use App\Services\UserRoleService;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
@@ -21,7 +22,8 @@ class SistemaRolManager extends Component
     protected function esGestionador(): bool
     {
         $user = Auth::user();
-        return $user && trim((string) $user->usu_cedula) === '13354832';
+
+        return $user && app(UserRoleService::class)->esGestionador($user);
     }
 
     public function asignarRol(): void

@@ -17,6 +17,7 @@ use App\Models\Seccion;
 use App\Models\LapsoAcademico;
 use App\Models\Malla;
 use App\Models\Programa;
+use App\Models\Rol;
 use App\Models\Trayecto;
 
 /**

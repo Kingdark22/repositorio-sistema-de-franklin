@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Organizacion extends RepositorioModel
 {
@@ -19,13 +20,15 @@ class Organizacion extends RepositorioModel
         'direccion',
         'cargo',
         'dep_codigo',
-        'nombre_contacto',
-        'apellido_contacto',
-        'numero_contacto',
     ];
 
     public function departamento(): BelongsTo
     {
         return $this->belongsTo(Departamento::class, 'org_dep_codigo', 'dep_codigo');
+    }
+
+    public function contactos(): HasMany
+    {
+        return $this->hasMany(OrgContacto::class, 'org_codigo', 'org_codigo');
     }
 }

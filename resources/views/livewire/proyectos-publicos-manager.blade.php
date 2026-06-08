@@ -30,14 +30,14 @@
         @if($pub)
             <fieldset style="border: 2px solid #8b0000; border-radius: 6px; padding: 10px;">
                 <legend style="color: #000; font-weight: bold; font-style: italic; padding: 0 5px;">
-                    {{ $pub->proyecto->titulo }}
+                    {{ $pub->proyecto->titulo ?? 'Proyecto no disponible' }}
                 </legend>
 
                 <div style="margin-bottom: 12px;">
                     <button type="button" wire:click="cerrar" class="cm-btn cm-btn-secondary cm-btn-sm">&larr; Volver</button>
                 </div>
 
-                <p><b>Resumen:</b> {{ $pub->proyecto->resumen }}</p>
+                <p><b>Resumen:</b> {{ $pub->proyecto->resumen ?? '(sin resumen)' }}</p>
                 <p><b>Fecha de publicaci&oacute;n:</b> {{ $pub->created_at ? $pub->created_at->format('d/m/Y') : '-' }}</p>
 
                 <hr style="border:none; border-top:1px solid #ccc; margin:15px 0;">
@@ -100,8 +100,8 @@
                         @foreach($publicaciones as $pub)
                             <tr style="background-color: {{ $loop->iteration % 2 == 0 ? '#E0E0E0' : '#FFFFFF' }};" valign="top">
                                 <td align="center">{{ $loop->iteration }}</td>
-                                <td>{{ $pub->proyecto->titulo }}</td>
-                                <td style="font-size:10px;">{{ \Illuminate\Support\Str::limit($pub->proyecto->resumen, 60) }}</td>
+                                <td>{{ $pub->proyecto->titulo ?? 'N/A' }}</td>
+                                <td style="font-size:10px;">{{ \Illuminate\Support\Str::limit($pub->proyecto->resumen ?? '', 60) }}</td>
                                 <td align="center">{{ $pub->created_at ? $pub->created_at->format('d/m/Y') : '-' }}</td>
                                 <td align="center">{{ $pub->comentarios->count() }}</td>
                                 <td align="center">

@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Helpers\DualDatabase;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
@@ -63,23 +64,26 @@ class AcademicCatalog
     public function programasForSelect(): Collection
     {
         $conn = DualDatabase::academicConnection();
+        $cacheKey = 'academic_programas_v2_' . $conn;
 
-        $rows = DB::connection($conn)
-            ->table('programa')
-            ->where('pro_estatus', 'A')
-            ->select([
-                'pro_codigo as id',
-                'pro_nombre as nombre',
-                'pro_siglas as siglas',
-            ])
-            ->orderBy('pro_nombre')
-            ->get();
+        return Cache::remember($cacheKey, 3600, function () use ($conn) {
+            $rows = DB::connection($conn)
+                ->table('programa')
+                ->where('pro_estatus', 'A')
+                ->select([
+                    'pro_codigo as id',
+                    'pro_nombre as nombre',
+                    'pro_siglas as siglas',
+                ])
+                ->orderBy('pro_nombre')
+                ->get();
 
-        if ($conn === 'intranet') {
-            app(IntranetSimulationMirrorService::class)->mirrorAllPrograms();
-        }
+            if ($conn === 'intranet') {
+                app(IntranetSimulationMirrorService::class)->mirrorAllPrograms();
+            }
 
-        return collect($rows);
+            return collect($rows);
+        });
     }
 
     /**

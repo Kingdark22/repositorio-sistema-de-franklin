@@ -59,7 +59,7 @@ class UserRoleService
         $cedula = trim((string) $user->usu_cedula);
 
         if ($cedula === '13354832') {
-            return ['administrador' => 'Gestionador'];
+            return ['administrador' => 'Administrador', 'gestionador' => 'Gestionador'];
         }
 
         if ($this->cachedAvailableRoles !== null && $this->cachedCedula === $cedula) {
@@ -374,14 +374,13 @@ class UserRoleService
         return $this->setActiveRole($user, $buttons[$moduleKey]['slug']);
     }
 
+    public function esGestionador(User $user): bool
+    {
+        return trim((string) $user->usu_cedula) === '13354832';
+    }
+
     protected function label(string $slug): string
     {
-        if ($slug === 'administrador') {
-            $user = auth()->user();
-            if ($user && trim((string) $user->usu_cedula) === '13354832') {
-                return 'Gestionador';
-            }
-        }
         return config('roles.labels.' . $slug, ucfirst($slug));
     }
 

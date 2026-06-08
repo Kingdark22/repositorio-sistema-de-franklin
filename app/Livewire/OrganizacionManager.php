@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Models\Organizacion;
 use App\Models\Departamento;
+use App\Services\UserRoleService;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
@@ -54,11 +55,8 @@ class OrganizacionManager extends Component
     protected function esGestionador(): bool
     {
         $user = Auth::user();
-        if (! $user) {
-            return false;
-        }
 
-        return trim((string) $user->usu_cedula) === '13354832';
+        return $user && app(UserRoleService::class)->esGestionador($user);
     }
 
     public function mount(): void
@@ -217,13 +215,10 @@ class OrganizacionManager extends Component
 
         $orgPayload = [
             'nombre'            => $nombreNuevo,
-            'rif'               => $rifNuevo,
-            'correo'            => $this->org_correo ? trim($this->org_correo) : null,
+            'rif'               => $this->org_rif ?: '-',
+            'correo'            => $this->org_correo ?: '-',
             'direccion'         => $dirNueva,
             'cargo'             => $cargoNuevo,
-            'nombre_contacto'   => $this->org_nombre_contacto ? trim($this->org_nombre_contacto) : '-',
-            'apellido_contacto' => $this->org_apellido_contacto ? trim($this->org_apellido_contacto) : '-',
-            'numero_contacto'   => $this->org_numero_contacto ? trim($this->org_numero_contacto) : '-',
         ];
 
         if ($this->org_nombre_key) {
@@ -243,9 +238,6 @@ class OrganizacionManager extends Component
                     $dep = Departamento::create([
                         'nombre'            => $d['nombre'],
                         'cargo'             => $d['cargo'] ?: null,
-                        'nombre_contacto'   => $d['nombre_contacto'] ?? null,
-                        'apellido_contacto' => $d['apellido_contacto'] ?? null,
-                        'numero_contacto'   => $d['numero_contacto'] ?? null,
                     ]);
                     Organizacion::create($orgPayload + ['dep_codigo' => $dep->id]);
                 } else {
@@ -253,9 +245,6 @@ class OrganizacionManager extends Component
                     if ($dep) {
                         $dep->nombre            = $d['nombre'];
                         $dep->cargo             = $d['cargo'] ?: null;
-                        $dep->nombre_contacto   = $d['nombre_contacto'] ?? null;
-                        $dep->apellido_contacto = $d['apellido_contacto'] ?? null;
-                        $dep->numero_contacto   = $d['numero_contacto'] ?? null;
                         $dep->save();
                     }
                 }
@@ -422,9 +411,6 @@ class OrganizacionManager extends Component
         $depData = [
             'nombre'            => strtoupper(trim($this->dep_nombre)),
             'cargo'             => $this->dep_cargo ? trim($this->dep_cargo) : null,
-            'nombre_contacto'   => $this->dep_nombre_contacto ? trim($this->dep_nombre_contacto) : null,
-            'apellido_contacto' => $this->dep_apellido_contacto ? trim($this->dep_apellido_contacto) : null,
-            'numero_contacto'   => $this->dep_numero_contacto ? trim($this->dep_numero_contacto) : null,
         ];
 
         if ($this->editandoDepId) {
@@ -443,9 +429,6 @@ class OrganizacionManager extends Component
                 'direccion'         => $orgRow->direccion,
                 'cargo'             => $orgRow->cargo,
                 'dep_codigo'        => $dep->id,
-                'nombre_contacto'   => $orgRow->nombre_contacto,
-                'apellido_contacto' => $orgRow->apellido_contacto,
-                'numero_contacto'   => $orgRow->numero_contacto,
             ]);
 
             Organizacion::where('nombre', $orgRow->nombre)->whereNull('org_dep_codigo')->delete();
@@ -477,9 +460,6 @@ class OrganizacionManager extends Component
                         'direccion'         => $orgRow->direccion,
                         'cargo'             => $orgRow->cargo,
                         'dep_codigo'        => null,
-                        'nombre_contacto'   => $orgRow->nombre_contacto,
-                        'apellido_contacto' => $orgRow->apellido_contacto,
-                        'numero_contacto'   => $orgRow->numero_contacto,
                     ]);
                 }
             }

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Departamento extends RepositorioModel
 {
@@ -16,13 +17,15 @@ class Departamento extends RepositorioModel
         'nombre',
         'cargo',
         'uex_codigo',
-        'nombre_contacto',
-        'apellido_contacto',
-        'numero_contacto',
     ];
 
     public function usuarioExterno(): BelongsTo
     {
         return $this->belongsTo(UsuarioExterno::class, 'dep_uex_codigo', 'uex_codigo');
+    }
+
+    public function contactos(): HasMany
+    {
+        return $this->hasMany(OrgContacto::class, 'dep_codigo', 'dep_codigo');
     }
 }

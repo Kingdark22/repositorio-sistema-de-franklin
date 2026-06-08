@@ -13,6 +13,7 @@ return [
         'profesor proyecto' => 'Docente',
         'coordinador'     => 'Coordinación',
         'negocio'         => 'Negocio',
+        'gestionador'     => 'Gestionador',
     ],
 
     /*
@@ -26,6 +27,7 @@ return [
         'coordinacion' => ['slug' => 'coordinador',       'label' => 'Coordinación'],
         'docente'      => ['slug' => 'profesor proyecto',  'label' => 'Docente'],
         'negocio'      => ['slug' => 'negocio',           'label' => 'Negocio'],
+        'gestionador'  => ['slug' => 'gestionador',       'label' => 'Gestionador'],
     ],
 
     /*
@@ -38,6 +40,7 @@ return [
         'profesor proyecto' => ['profesor proyecto', 'profesor', 'docente'],
         'administrador'    => ['administrador', 'admin'],
         'negocio'          => ['negocio'],
+        'gestionador'      => ['gestionador'],
     ],
 
     /*

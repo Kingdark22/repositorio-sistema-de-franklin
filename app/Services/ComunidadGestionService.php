@@ -6,6 +6,7 @@ use App\Models\Comunidad;
 use App\Models\Direccion;
 use App\Models\Estado;
 use App\Models\Municipio;
+use Illuminate\Support\Facades\Cache;
 
 class ComunidadGestionService
 {
@@ -74,7 +75,7 @@ class ComunidadGestionService
 
         if ($dirNombre !== '' && !empty($datos['municipio_id'])) {
             $direccion = Direccion::firstOrCreate(
-                ['dir_calle' => $dirNombre, 'mun_codigo' => $datos['municipio_id']]
+                ['dir_calle' => $dirNombre, 'mun_codigo' => $datos['municipio_id'], 'dir_parroquia' => '', 'dir_sector' => '']
             );
             $direccionId = $direccion->dir_codigo;
         } else {
@@ -89,6 +90,7 @@ class ComunidadGestionService
                 ? $datos['prefijo_telefono'] . $datos['numero_telefono']
                 : ($datos['numero_telefono'] ?? null),
             'dir_codigo' => $direccionId,
+            'tipo' => 'Consejo comunal',
         ];
 
         $comunidad = Comunidad::guardar($payload, $id);
@@ -155,7 +157,7 @@ class ComunidadGestionService
      */
     public function datosVistaFormulario(?string $estadoId = null): array
     {
-        $estados = Estado::orderBy('est_nombre')->get();
+        $estados = Cache::remember('comunidad_estados', 86400, fn() => Estado::orderBy('est_nombre')->get());
         $municipios = collect();
 
         if ($estadoId) {

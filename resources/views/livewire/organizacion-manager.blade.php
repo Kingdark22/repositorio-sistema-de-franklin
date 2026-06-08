@@ -47,7 +47,7 @@
         }
     </style>
 
-    <h2 class="titulo" style="margin-bottom: 20px; font-weight: bolder; margin-top: 10px;">Gesti&oacute;n de Organizaciones</h2>
+    <h2 class="titulo" style="margin-bottom: 20px; font-weight: bolder; margin-top: 10px;">Gestión de Organizaciones</h2>
 
     @if($mensaje)
         <div style="background-color: {{ $tipoMensaje === 'success' ? '#d4edda' : '#f8d7da' }}; color: {{ $tipoMensaje === 'success' ? '#155724' : '#721c24' }}; border: 1px solid {{ $tipoMensaje === 'success' ? '#c3e6cb' : '#f5c6cb' }}; padding: 10px; margin-bottom: 15px; border-radius: 4px; font-size:12px; display: flex; justify-content: space-between; align-items: center;">
@@ -96,20 +96,52 @@
                                 @error('dep_cargo')<br><span style="color:red;font-size:10px;">{{ $message }}</span>@enderror
                             </td>
                         </tr>
-                        <tr>
-                            <td><b>Contacto:</b></td>
-                            <td colspan="3">
-                                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                                    <span><label style="font-size:11px; margin-right:3px;">Nombre</label>
-                                    <input type="text" wire:model="dep_nombre_contacto" style="width:130px;"></span>
-                                    <span><label style="font-size:11px; margin-right:3px;">Apellido</label>
-                                    <input type="text" wire:model="dep_apellido_contacto" style="width:130px;"></span>
-                                    <span><label style="font-size:11px; margin-right:3px;">Tel&eacute;fono</label>
-                                    <input type="text" wire:model="dep_numero_contacto" style="width:100px;"></span>
-                                </div>
-                            </td>
-                        </tr>
                     </table>
+
+                    {{-- Contactos del departamento --}}
+                    <div style="margin-top: 15px; border-top: 1px solid #ccc; padding-top: 12px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                            <b style="font-size: 12px;">Personas de Contacto</b>
+                            <button type="button" wire:click="agregarContactoDep" class="cm-btn cm-btn-primary cm-btn-sm">+ Agregar contacto</button>
+                        </div>
+                        @if (empty($contactosDep))
+                            <div style="background: #fdfdfd; border: 1px dashed #bbb; border-radius: 4px; padding: 12px; text-align: center; color: #555; font-size: 11px; font-style: italic;">
+                                No hay contactos registrados para este departamento.
+                            </div>
+                        @else
+                            @foreach ($contactosDep as $i => $ct)
+                                <div style="border: 1px solid #bbb; border-radius: 4px; margin-bottom: 10px; overflow: hidden;">
+                                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; background: #8bb2b7; font-size: 11px; font-weight: bold;">
+                                        <span>Contacto #{{ $loop->iteration }}</span>
+                                        <button type="button" wire:click="quitarContactoDep({{ $i }})" wire:confirm="¿Quitar este contacto?" class="cm-btn cm-btn-danger cm-btn-sm" style="padding: 2px 8px; font-size: 10px;">Quitar</button>
+                                    </div>
+                                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; padding: 10px; font-size: 11px;">
+                                        <div>
+                                            <label style="display:block; font-weight:bold; margin-bottom:3px;">Nombre:</label>
+                                            <input wire:model="contactosDep.{{ $i }}.nombre" type="text" style="width:100%; padding:6px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;">
+                                        </div>
+                                        <div>
+                                            <label style="display:block; font-weight:bold; margin-bottom:3px;">Apellido:</label>
+                                            <input wire:model="contactosDep.{{ $i }}.apellido" type="text" style="width:100%; padding:6px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;">
+                                        </div>
+                                        <div>
+                                            <label style="display:block; font-weight:bold; margin-bottom:3px;">Cargo:</label>
+                                            <input wire:model="contactosDep.{{ $i }}.cargo" type="text" style="width:100%; padding:6px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;" placeholder="Cargo...">
+                                        </div>
+                                        <div>
+                                            <label style="display:block; font-weight:bold; margin-bottom:3px;">Correo:</label>
+                                            <input wire:model="contactosDep.{{ $i }}.correo" type="email" style="width:100%; padding:6px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;" placeholder="correo@ejemplo.com">
+                                        </div>
+                                        <div>
+                                            <label style="display:block; font-weight:bold; margin-bottom:3px;">Teléfono:</label>
+                                            <input wire:model="contactosDep.{{ $i }}.telefono" type="text" style="width:100%; padding:6px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;" placeholder="0412-1234567">
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        @endif
+                    </div>
+
                     <div style="margin-top: 12px; text-align: center;">
                         <button type="button" wire:click="cancelarFormDep" class="cm-btn cm-btn-danger cm-btn-sm" style="margin-right: 8px;">Cancelar</button>
                         <button type="button" wire:click="guardarDep" class="cm-btn cm-btn-primary cm-btn-sm">
@@ -124,29 +156,28 @@
                 <thead>
                     <tr style="background-color: #8bb2b7; color: #000; font-weight: bold;">
                         <th width="5%">N&deg;</th>
-                        <th width="30%">Nombre</th>
-                        <th width="20%">Cargo</th>
-                        <th width="30%">Contacto</th>
+                        <th width="25%">Nombre</th>
+                        <th width="15%">Cargo</th>
+                        <th width="40%">Contactos</th>
                         <th width="15%">Acciones</th>
                     </tr>
                 </thead>
                 <tbody class="Texto">
                     @forelse($deps as $dep)
                         @php
-                            $contactoDep = trim(($dep->nombre_contacto ?? '') . ' ' . ($dep->apellido_contacto ?? ''));
-                            if ($dep->numero_contacto) { $contactoDep .= ($contactoDep ? ' &middot; ' : '') . $dep->numero_contacto; }
+                            $contactoList = $dep->contactos->map(fn($c) => trim($c->oco_nombre . ' ' . ($c->oco_apellido ?? '')))->filter()->implode(', ');
                         @endphp
                         <tr style="background-color: {{ $loop->iteration % 2 == 0 ? '#E0E0E0' : '#FFFFFF' }};" valign="top">
                             <td align="center">{{ $loop->iteration }}</td>
                             <td>{{ $dep->nombre }}</td>
                             <td>{{ $dep->cargo ?? '-' }}</td>
-                            <td>{{ $contactoDep ?: '-' }}</td>
+                            <td>{{ $contactoList ?: '-' }}</td>
                             <td align="center">
                                 <div style="display: inline-flex; align-items: center; gap: 4px;">
                                     <button type="button" wire:click.prevent="editarDep({{ $dep->id }})"
                                         class="cm-btn cm-btn-secondary cm-btn-sm">Editar</button>
                                     <button type="button" wire:click.prevent="eliminarDep({{ $dep->id }})"
-                                        wire:confirm="&iquest;Eliminar este departamento?"
+                                        wire:confirm="¿Eliminar este departamento?"
                                         class="cm-btn cm-btn-danger cm-btn-sm">Eliminar</button>
                                 </div>
                             </td>
@@ -161,7 +192,7 @@
         </fieldset>
     @elseif($mostrarFormOrg)
         {{-- ═══════════════════════════════════════════════════
-             FORMULARIO REGISTRO/EDICIÓN (sin tabla)
+             FORMULARIO REGISTRO/EDICIÓN
              ═══════════════════════════════════════════════════ --}}
         <fieldset style="border: 2px solid #8b0000; border-radius: 6px; padding: 10px;">
             <legend style="color: #000; font-weight: bold; font-style: italic; padding: 0 5px;">
@@ -193,26 +224,58 @@
                     </td>
                 </tr>
                 <tr>
-                    <td><b>Direcci&oacute;n:</b></td>
+                    <td><b>Dirección:</b></td>
                     <td colspan="3">
                         <textarea wire:model="org_direccion" rows="2" style="width: 95%; height: 50px;"></textarea>
                         @error('org_direccion')<br><span style="color:red;font-size:10px;">{{ $message }}</span>@enderror
                     </td>
                 </tr>
-                <tr>
-                    <td><b>Contacto:</b></td>
-                    <td colspan="3">
-                        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                            <span><label style="font-size:11px; margin-right:3px;">Nombre</label>
-                            <input type="text" wire:model="org_nombre_contacto" style="width:130px;"></span>
-                            <span><label style="font-size:11px; margin-right:3px;">Apellido</label>
-                            <input type="text" wire:model="org_apellido_contacto" style="width:130px;"></span>
-                            <span><label style="font-size:11px; margin-right:3px;">Tel&eacute;fono</label>
-                            <input type="text" wire:model="org_numero_contacto" style="width:100px;"></span>
-                        </div>
-                    </td>
-                </tr>
             </table>
+
+            {{-- Personas de Contacto --}}
+            <div style="margin-top: 20px; border-top: 2px solid #8b0000; padding-top: 15px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                    <h4 style="margin: 0; font-size: 13px; font-weight: bold; color: #8b0000; font-style: italic;">Personas de Contacto</h4>
+                    <button type="button" wire:click="agregarContacto" class="cm-btn cm-btn-primary cm-btn-sm">+ Agregar contacto</button>
+                </div>
+                @if (empty($contactos))
+                    <div style="background: #fdfdfd; border: 1px dashed #bbb; border-radius: 6px; padding: 15px; text-align: center; color: #555; font-size: 11px; font-style: italic;">
+                        No hay personas de contacto registradas para esta organizaci&oacute;n.
+                    </div>
+                @else
+                    @foreach ($contactos as $i => $ct)
+                        <div style="border: 1px solid #bbb; border-radius: 6px; margin-bottom: 12px; overflow: hidden;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 12px; background: #8bb2b7; font-size: 11px; font-weight: bold;">
+                                <span>Contacto #{{ $loop->iteration }}</span>
+                                <button type="button" wire:click="quitarContacto({{ $i }})" wire:confirm="¿Quitar este contacto?" class="cm-btn cm-btn-danger cm-btn-sm" style="padding: 2px 8px; font-size: 10px;">Quitar</button>
+                            </div>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; padding: 12px; font-size: 11px;">
+                                <div>
+                                    <label style="display:block; font-weight:bold; margin-bottom:3px;">Nombre:</label>
+                                    <input wire:model="contactos.{{ $i }}.nombre" type="text" style="width:100%; padding:6px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;">
+                                    @error('contactos.' . $i . '.nombre')<span style="color:red;font-size:10px;display:block;margin-top:2px;">{{ $message }}</span>@enderror
+                                </div>
+                                <div>
+                                    <label style="display:block; font-weight:bold; margin-bottom:3px;">Apellido:</label>
+                                    <input wire:model="contactos.{{ $i }}.apellido" type="text" style="width:100%; padding:6px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;">
+                                </div>
+                                <div>
+                                    <label style="display:block; font-weight:bold; margin-bottom:3px;">Cargo:</label>
+                                    <input wire:model="contactos.{{ $i }}.cargo" type="text" style="width:100%; padding:6px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;" placeholder="Cargo...">
+                                </div>
+                                <div>
+                                    <label style="display:block; font-weight:bold; margin-bottom:3px;">Correo:</label>
+                                    <input wire:model="contactos.{{ $i }}.correo" type="email" style="width:100%; padding:6px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;" placeholder="correo@ejemplo.com">
+                                </div>
+                                <div>
+                                    <label style="display:block; font-weight:bold; margin-bottom:3px;">Teléfono:</label>
+                                    <input wire:model="contactos.{{ $i }}.telefono" type="text" style="width:100%; padding:6px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;" placeholder="0412-1234567">
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
+                @endif
+            </div>
 
             {{-- Acordeón de departamentos --}}
             @php
@@ -227,15 +290,11 @@
                 @if($mostrarModalDeps)
                     <div style="padding:10px; border-top:1px solid #ccc;">
                         <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap; background: #f9f9f9; padding: 8px; border-radius: 4px; margin-bottom: 8px;">
-                            <input type="text" wire:model="nuevo_dep_nombre" placeholder="Nombre depto *" style="width: 130px; padding: 4px; border:1px solid #ccc; border-radius:3px;">
-                            <input type="text" wire:model="nuevo_dep_cargo" placeholder="Cargo" style="width: 110px; padding: 4px; border:1px solid #ccc; border-radius:3px;">
-                            <input type="text" wire:model="nuevo_dep_nombre_contacto" placeholder="Contacto nombre" style="width: 110px; padding: 4px; border:1px solid #ccc; border-radius:3px;">
-                            <input type="text" wire:model="nuevo_dep_apellido_contacto" placeholder="Apellido" style="width: 110px; padding: 4px; border:1px solid #ccc; border-radius:3px;">
-                            <input type="text" wire:model="nuevo_dep_numero_contacto" placeholder="Tel&eacute;fono" style="width: 90px; padding: 4px; border:1px solid #ccc; border-radius:3px;">
-                            <button type="button" wire:click="agregarDepartamentoFila" class="cm-btn cm-btn-primary cm-btn-sm">+ A&ntilde;adir</button>
+                            <input type="text" wire:model="nuevo_dep_nombre" placeholder="Nombre depto *" style="width: 180px; padding: 4px; border:1px solid #ccc; border-radius:3px;">
+                            <input type="text" wire:model="nuevo_dep_cargo" placeholder="Cargo" style="width: 150px; padding: 4px; border:1px solid #ccc; border-radius:3px;">
+                            <button type="button" wire:click="agregarDepartamentoFila" class="cm-btn cm-btn-primary cm-btn-sm">+ Añadir</button>
                         </div>
                         @error('nuevo_dep_nombre')<div style="color:red;font-size:10px;margin-bottom:5px;">{{ $message }}</div>@enderror
-                        @error('nuevo_dep_cargo')<div style="color:red;font-size:10px;margin-bottom:5px;">{{ $message }}</div>@enderror
 
                         @php
                             $depsVisibles = collect($departamentosForm)->filter(fn($d) => !($d['is_deleted'] ?? false));
@@ -251,22 +310,16 @@
                                         <th align="left" width="5%">N&deg;</th>
                                         <th align="left">Nombre</th>
                                         <th align="left">Cargo</th>
-                                        <th align="left">Contacto</th>
                                         <th align="center" width="60">Acci&oacute;n</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach($departamentosForm as $index => $d)
                                         @if(!($d['is_deleted'] ?? false))
-                                            @php
-                                                $contactoDepForm = trim(($d['nombre_contacto'] ?? '') . ' ' . ($d['apellido_contacto'] ?? ''));
-                                                if (!empty($d['numero_contacto'])) { $contactoDepForm .= ($contactoDepForm ? ' &middot; ' : '') . $d['numero_contacto']; }
-                                            @endphp
                                             <tr style="background-color: {{ $loop->iteration % 2 == 0 ? '#E0E0E0' : '#FFFFFF' }};">
                                                 <td align="center">{{ $loop->iteration }}</td>
                                                 <td>{{ $d['nombre'] }}</td>
                                                 <td>{{ $d['cargo'] ?: '-' }}</td>
-                                                <td>{{ $contactoDepForm ?: '-' }}</td>
                                                 <td align="center">
                                                     <button type="button" wire:click="removerDepartamentoFila({{ $index }})"
                                                         class="cm-btn cm-btn-danger cm-btn-sm" style="font-size:10px;">Remover</button>
@@ -315,30 +368,34 @@
                         <th width="20%">Nombre</th>
                         <th width="10%">RIF</th>
                         <th width="10%">Cargo</th>
-                        <th width="30%">Direcci&oacute;n</th>
-                        <th width="15%">Contacto</th>
+                        <th width="25%">Direcci&oacute;n</th>
+                        <th width="20%">Contactos</th>
                         <th width="10%">Acciones</th>
                     </tr>
                 </thead>
                 <tbody class="Texto">
                     @forelse($organizaciones as $org)
                         @php
-                            $contactoOrg = trim(($org->nombre_contacto ?? '') . ' ' . ($org->apellido_contacto ?? ''));
-                            if ($org->numero_contacto) { $contactoOrg .= ($contactoOrg ? ' &middot; ' : '') . $org->numero_contacto; }
+                            $contactoList = $org->contactos->map(fn($c) => trim($c->oco_nombre . ' ' . ($c->oco_apellido ?? '')))->filter()->implode(', ');
                         @endphp
                         <tr style="background-color: {{ $loop->iteration % 2 == 0 ? '#E0E0E0' : '#FFFFFF' }};" valign="top">
                             <td align="center">{{ $loop->iteration }}</td>
-                            <td>{{ $org->nombre }}</td>
+                            <td>
+                                <a href="#" wire:click.prevent="seleccionarOrg('{{ addslashes($org->nombre) }}')"
+                                    style="color: #000; text-decoration: underline; font-weight: bold;">
+                                    {{ $org->nombre }}
+                                </a>
+                            </td>
                             <td>{{ $org->rif ?? '-' }}</td>
                             <td>{{ $org->cargo ?? '-' }}</td>
                             <td>{{ $org->direccion ?? '-' }}</td>
-                            <td>{{ $contactoOrg ?: '-' }}</td>
+                            <td style="font-size:10px;">{{ $contactoList ?: '-' }}</td>
                             <td align="center">
                                 <div style="display: inline-flex; align-items: center; gap: 4px;">
                                     <button type="button" wire:click.prevent="editarOrg('{{ addslashes($org->nombre) }}')"
                                         class="cm-btn cm-btn-secondary cm-btn-sm">Editar</button>
                                     <button type="button" wire:click.prevent="eliminarOrg('{{ addslashes($org->nombre) }}')"
-                                        wire:confirm="&iquest;Eliminar esta organizaci&oacute;n y todos sus departamentos?"
+                                        wire:confirm="¿Eliminar esta organización y todos sus departamentos?"
                                         class="cm-btn cm-btn-danger cm-btn-sm">Eliminar</button>
                                 </div>
                             </td>

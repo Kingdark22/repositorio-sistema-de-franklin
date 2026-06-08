@@ -13,7 +13,6 @@ class Componente extends RepositorioModel
     protected $fillable = [
         'nombre',
         'programa_id',
-        'anio',
         'es_obligatorio',
         'estado_logico',
     ];
@@ -26,13 +25,12 @@ class Componente extends RepositorioModel
     /**
      * Guarda múltiples componentes.
      */
-    public static function guardarMuchos(array $rows, string $programa_id, string $anio): void
+    public static function guardarMuchos(array $rows, string $programa_id): void
     {
         foreach ($rows as $row) {
             self::create([
                 'nombre' => $row['nombre'],
                 'programa_id' => $programa_id,
-                'anio' => $anio,
                 'es_obligatorio' => $row['es_obligatorio'],
                 'estado_logico' => true,
             ]);

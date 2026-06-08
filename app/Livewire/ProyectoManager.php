@@ -186,10 +186,7 @@ class ProyectoManager extends Component
             'calificacion.min' => 'La calificacion minima es 1.',
             'calificacion.max' => 'La calificacion maxima es 20.',
             'fecha_aprobacion.required' => 'La fecha de aprobacion es obligatoria.',
-            'linea_investigacion_id.required' => 'Debe seleccionar una linea de investigacion.',
-            'metodologia_id.required' => 'Debe seleccionar una metodologia.',
-            'tipo_publicacion_id.required' => 'Debe seleccionar un tipo de publicacion.',
-            'tipo_investigacion_id.required' => 'Debe seleccionar un tipo de investigacion.',
+
             'lapso_academico_id.required' => 'Debe seleccionar un lapso academico.',
             'equipo_seccion_clave.required' => 'Debe validar el equipo (seccion intranet).',
             'comunidad_id.required' => 'La comunidad es obligatoria. El grupo seleccionado debe tener una comunidad asignada.',

@@ -4,8 +4,7 @@ namespace App\Livewire;
 
 use App\Models\Componente;
 use App\Services\AcademicCatalog;
-use App\Services\IntranetEquipoSeccionService;
-use Illuminate\Support\Collection;
+use App\Helpers\DbHelper;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -16,19 +15,10 @@ class ComponenteManager extends Component
 
     public $search = '';
     public $filterPrograma = '';
-    public $filterTrayecto = '';
     public $viewMode = 'list';
     public $editingId = null;
 
     public $programa_id = '';
-    public $anio = '';
-
-    public Collection $trayectosPrograma;
-
-    public function mount()
-    {
-        $this->trayectosPrograma = collect();
-    }
 
     public $nombre = '';
     public $es_obligatorio = true;
@@ -39,7 +29,6 @@ class ComponenteManager extends Component
     {
         return [
             'programa_id' => 'required',
-            'anio' => 'required|string',
             'rows.*.nombre' => 'required|min:3',
             'rows.*.es_obligatorio' => 'boolean',
         ];
@@ -48,7 +37,6 @@ class ComponenteManager extends Component
     protected $messages = [
         'rows.*.nombre.required' => 'Debe nombrar el documento en esta fila.',
         'programa_id.required' => 'Debe asignar un Programa.',
-        'anio.required' => 'Debe asignarle el trayecto (I, II, III, IV).',
     ];
 
     public function updatingSearch()
@@ -61,34 +49,11 @@ class ComponenteManager extends Component
         $this->resetPage();
     }
 
-    public function updatingFilterTrayecto()
-    {
-        $this->resetPage();
-    }
-
-    public function updatedProgramaId($value)
-    {
-        $this->anio = '';
-        $this->loadTrayectosPrograma();
-    }
-
-    protected function loadTrayectosPrograma()
-    {
-        if ($this->programa_id === '') {
-            $this->trayectosPrograma = collect();
-            return;
-        }
-
-        $this->trayectosPrograma = app(IntranetEquipoSeccionService::class)
-            ->trayectosEnLapso(null, (int) $this->programa_id);
-    }
-
     public function create()
     {
         $this->resetValidation();
         $this->resetFields();
 
-        $this->loadTrayectosPrograma();
         $this->rows = [['id' => null, 'nombre' => '', 'es_obligatorio' => true]];
 
         $this->viewMode = 'form';
@@ -119,7 +84,6 @@ class ComponenteManager extends Component
         }
 
         $this->programa_id = (string) $comp->programa_id;
-        $this->anio = $comp->anio;
 
         $this->rows = [
             [
@@ -129,7 +93,6 @@ class ComponenteManager extends Component
             ]
         ];
 
-        $this->loadTrayectosPrograma();
         $this->viewMode = 'form';
     }
 
@@ -144,7 +107,6 @@ class ComponenteManager extends Component
         $this->editingId = null;
         $this->nombre = '';
         $this->programa_id = '';
-        $this->anio = '';
         $this->es_obligatorio = true;
         $this->rows = [];
     }
@@ -152,6 +114,26 @@ class ComponenteManager extends Component
     public function save()
     {
         $this->validate();
+
+        // Validate unique names within the submission (case-insensitive)
+        $nombres = array_map(fn($r) => strtoupper(trim($r['nombre'])), $this->rows);
+        if (count($nombres) !== count(array_unique($nombres))) {
+            $this->addError('rows', 'No puede haber nombres de componentes duplicados.');
+            return;
+        }
+
+        // Validate unique names against existing DB records per program
+        foreach ($this->rows as $row) {
+            $query = Componente::where('programa_id', $this->programa_id)
+                ->whereRaw('UPPER(TRIM(comp_nombre)) = ?', [strtoupper(trim($row['nombre']))]);
+            if (!empty($row['id'])) {
+                $query->where('id', '!=', $row['id']);
+            }
+            if ($query->exists()) {
+                $this->addError('rows', "El componente '{$row['nombre']}' ya existe para este programa.");
+                return;
+            }
+        }
 
         if ($this->editingId) {
             $createdCount = 0;
@@ -162,7 +144,6 @@ class ComponenteManager extends Component
                         $comp->update([
                             'nombre' => $row['nombre'],
                             'programa_id' => $this->programa_id,
-                            'anio' => $this->anio,
                             'es_obligatorio' => $row['es_obligatorio'],
                         ]);
                     }
@@ -170,7 +151,6 @@ class ComponenteManager extends Component
                     Componente::create([
                         'nombre' => $row['nombre'],
                         'programa_id' => $this->programa_id,
-                        'anio' => $this->anio,
                         'es_obligatorio' => $row['es_obligatorio'],
                         'estado_logico' => true,
                     ]);
@@ -188,7 +168,6 @@ class ComponenteManager extends Component
                 Componente::create([
                     'nombre' => $row['nombre'],
                     'programa_id' => $this->programa_id,
-                    'anio' => $this->anio,
                     'es_obligatorio' => $row['es_obligatorio'],
                     'estado_logico' => true,
                 ]);
@@ -223,17 +202,12 @@ class ComponenteManager extends Component
 
         if ($this->search !== '') {
             $query->where(function ($q) {
-                $q->where('nombre', 'like', $this->search . '%')
-                  ->orWhere('anio', 'like', $this->search . '%');
+                $q->where('nombre', 'like', $this->search . '%');
             });
         }
 
         if ($this->filterPrograma !== '') {
             $query->where('programa_id', $this->filterPrograma);
-        }
-
-        if ($this->filterTrayecto !== '') {
-            $query->where('anio', $this->filterTrayecto);
         }
 
         $items = $query->latest('id')->paginate(10);
@@ -242,7 +216,6 @@ class ComponenteManager extends Component
         return [
             'listaRegistros' => $items,
             'programas' => app(AcademicCatalog::class)->programasForSelect(),
-            'trayectos' => ['I', 'II', 'III', 'IV', 'V', 'VI'],
         ];
     }
 

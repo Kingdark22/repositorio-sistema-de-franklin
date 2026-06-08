@@ -105,7 +105,7 @@
                                     <span
                                         style="font-size: 10px; color: #555;">{{ Str::limit($p->resumen, 60) }}</span><br>
                                     <span style="font-size: 9px; color: #888;">Registrado:
-                                        {{ $p->created_at->format('d/m/Y') }}</span>
+                                        {{ $p->created_at ? $p->created_at->format('d/m/Y') : '-' }}</span>
                                 </td>
                                 <td align="center" style="padding: 5px; font-size: 10px;">
                                     {{ $p->equipo_resumen }}<br>
@@ -219,7 +219,7 @@
                                     <span style="font-size: 10px;">Comunidad:
                                         {{ $p->comunidad->nombre ?? 'N/A' }}</span><br>
                                     <span style="font-size: 10px;">Línea:
-                                        {{ $p->linea_investigacion->nombre_investigacion ?? '' }}</span>
+                                        {{ $p->linea_investigacion?->nombre_investigacion ?? '' }}</span>
                                 </td>
                                 <td align="center" style="padding: 5px;">
                                     @if ($p->estado_validacion === 'pendiente')
@@ -314,22 +314,6 @@
                 <div style="font-size: 14px; text-align: justify;">{{ $selectedProject->resumen }}</div>
             </fieldset>
             <table width="100%" cellpadding="8" cellspacing="0" style="font-size: 13px;">
-                <tr>
-                    <td width="30%"><b>Publicación:</b></td>
-                    <td>{{ $selectedProject->tipo_publicacion->nombre ?? '-' }}</td>
-                </tr>
-                <tr>
-                    <td><b>Investigación:</b></td>
-                    <td>{{ $selectedProject->tipo_investigacion->nombre ?? '-' }}</td>
-                </tr>
-                <tr>
-                    <td><b>Metodología:</b></td>
-                    <td>{{ $selectedProject->metodologia->nombre ?? '-' }}</td>
-                </tr>
-                <tr>
-                    <td><b>Línea inv.:</b></td>
-                    <td>{{ $selectedProject->linea_investigacion->nombre_investigacion ?? '-' }}</td>
-                </tr>
                 <tr>
                     <td><b>Comunidad:</b></td>
                     <td>{{ $selectedProject->comunidad->nombre ?? '-' }}</td>
@@ -558,68 +542,7 @@
                     @endif
                 </div>
 
-                {{-- == SECCIÓN CLASIFICACIÓN (colapsable, oculta por defecto) == --}}
-                <div style="margin-bottom: 15px; border: 1px solid #CCC; border-radius: 4px;">
-                    <button type="button" wire:click="toggleClassification"
-                        style="width:100%; background:#f5f5f5; border:none; padding:8px 12px; text-align:left; font-weight:bold; font-size:12px; cursor:pointer;">
-                        {{ $showClassification ? '▼ Ocultar clasificación' : '▶ Clasificación del proyecto (línea, metodología, etc.)' }}
-                    </button>
-                    @if ($showClassification)
-                        <div style="padding:10px;">
-                            <table width="100%" cellpadding="4" cellspacing="0" style="font-size: 12px;">
-                                <tr>
-                                    <td width="20%"><b>Línea inv.:</b></td>
-                                    <td width="30%"><select wire:model="linea_investigacion_id" style="width: 95%;">
-                                            <option value="">Seleccione...</option>
-                                            @foreach ($lineas as $l)
-                                                <option value="{{ $l->id }}">
-                                                    {{ Str::limit($l->nombre_investigacion, 40) }}</option>
-                                            @endforeach
-                                        </select>
-                                        <span class="obligatorio">*</span> @error('linea_investigacion_id')
-                                            <span class="obligatorio">{{ $message }}</span>
-                                        @enderror
-                                    </td>
-                                    <td width="20%"><b>Metodología:</b></td>
-                                    <td width="30%"><select wire:model="metodologia_id" style="width: 95%;">
-                                            <option value="">Seleccione...</option>
-                                            @foreach ($metodologias as $m)
-                                                <option value="{{ $m->id }}">{{ $m->nombre }}</option>
-                                            @endforeach
-                                        </select>
-                                        <span class="obligatorio">*</span> @error('metodologia_id')
-                                            <span class="obligatorio">{{ $message }}</span>
-                                        @enderror
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td><b>Tipo publicación:</b></td>
-                                    <td><select wire:model="tipo_publicacion_id" style="width: 95%;">
-                                            <option value="">Seleccione...</option>
-                                            @foreach ($tipos_publicacion as $tp)
-                                                <option value="{{ $tp->id }}">{{ $tp->nombre }}</option>
-                                            @endforeach
-                                        </select>
-                                        <span class="obligatorio">*</span> @error('tipo_publicacion_id')
-                                            <span class="obligatorio">{{ $message }}</span>
-                                        @enderror
-                                    </td>
-                                    <td><b>Tipo investigación:</b></td>
-                                    <td><select wire:model="tipo_investigacion_id" style="width: 95%;">
-                                            <option value="">Seleccione...</option>
-                                            @foreach ($tipos_investigacion as $ti)
-                                                <option value="{{ $ti->id }}">{{ $ti->nombre }}</option>
-                                            @endforeach
-                                        </select>
-                                        <span class="obligatorio">*</span> @error('tipo_investigacion_id')
-                                            <span class="obligatorio">{{ $message }}</span>
-                                        @enderror
-                                    </td>
-                                </tr>
-                            </table>
-                        </div>
-                    @endif
-                </div>
+                {{-- SECCIÓN CLASIFICACIÓN (oculta temporalmente) --}}
 
                 {{-- == SECCIÓN AVANZADO (colapsable, oculta por defecto) == --}}
                 <div style="margin-bottom: 15px; border: 1px solid #CCC; border-radius: 4px;">

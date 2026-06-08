@@ -288,6 +288,9 @@ class IntranetEquipoSeccionService
      */
     public function integrantes(string $equipoClave): Collection
     {
+        $cacheKey = 'eq_int_' . md5($equipoClave . '_' . $this->academicConnection());
+
+        return Cache::remember($cacheKey, 300, function () use ($equipoClave) {
         if (str_starts_with($equipoClave, GrupoProyectoService::PREFIJO.':')) {
             return app(GrupoProyectoService::class)->integrantesDesdeClave($equipoClave);
         }
@@ -352,6 +355,7 @@ class IntranetEquipoSeccionService
         } catch (\Throwable) {
             return collect();
         }
+        });
     }
 
     public function resumenEquipo(?string $equipoClave): string
@@ -412,7 +416,11 @@ class IntranetEquipoSeccionService
                     ->orderBy('pro.pro_siglas')
                     ->get();
             } catch (\Throwable) {
-                return collect();
+                return DB::connection($conn)
+                    ->table('programa')
+                    ->select(['pro_codigo', 'pro_siglas', 'pro_nombre'])
+                    ->orderBy('pro_siglas')
+                    ->get();
             }
         });
     }
@@ -486,8 +494,11 @@ class IntranetEquipoSeccionService
             return ['lap_nombre' => '', 'sec_nombre' => '', 'pro_siglas' => '', 'pro_nombre' => '', 'tra_codigo' => null, 'trayecto_nombre' => ''];
         }
 
-        try {
-            $conn = $this->academicConnection();
+        $cacheKey = 'eq_ctx_' . $lapCodigo . '_' . $secCodigo . '_' . ($proCodigo ?? '0') . '_' . $this->academicConnection();
+
+        return Cache::remember($cacheKey, 3600, function () use ($lapCodigo, $secCodigo, $proCodigo) {
+            try {
+                $conn = $this->academicConnection();
             $query = DB::connection($conn)
                 ->table('seccion as sec')
                 ->join('lapso_academico as lap', 'lap.lap_codigo', '=', 'sec.sec_cod_lapso_academico')
@@ -523,6 +534,7 @@ class IntranetEquipoSeccionService
         } catch (\Throwable) {
             return ['lap_nombre' => '', 'sec_nombre' => '', 'pro_siglas' => '', 'pro_nombre' => '', 'tra_codigo' => null, 'trayecto_nombre' => ''];
         }
+        });
     }
 
     protected function mapearEquipoGrupoRegistrado(object $grupo, ?string $cedulaEstudiante = null): object
@@ -602,7 +614,15 @@ class IntranetEquipoSeccionService
                 ->exists();
         }
         catch (\Throwable) {
-            return $this->estudiantePerteneceEquipo($cedula, $this->construirClave($partes['lap_codigo'], $partes['sec_codigo']));
+            try {
+                return $this->baseInscripcionQuery()
+                    ->whereRaw('TRIM(ins.ins_cedula) = ?', [$cedula])
+                    ->where('lap.lap_codigo', $partes['lap_codigo'])
+                    ->where('sec.sec_codigo', $partes['sec_codigo'])
+                    ->exists();
+            } catch (\Throwable) {
+                return false;
+            }
         }
     }
 

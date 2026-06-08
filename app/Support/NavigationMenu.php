@@ -14,7 +14,7 @@ class NavigationMenu
 {
     protected array $cache = [];
 
-    protected const CACHE_TTL = 300;
+    protected const CACHE_TTL = 3600;
 
     public function __construct(
         protected UserRoleService $roles,
@@ -60,7 +60,7 @@ class NavigationMenu
             'canValidateProjects'  => app(ProyectoGestionService::class)->usuarioPuedeValidar($user),
             'canRegisterProject'   => $user->puedeRegistrarProyecto(),
             'canManageSystemConfig'=> $isAdmin || $isCoordinator,
-            'canManageOrganizaciones' => trim((string) $user->usu_cedula) === '13354832', // Solo Gestionador (cédula 13354832)
+            'canManageOrganizaciones' => $this->roles->esGestionador($user),
         ];
 
         Cache::put($sessionKey, $flags, now()->addSeconds(self::CACHE_TTL));

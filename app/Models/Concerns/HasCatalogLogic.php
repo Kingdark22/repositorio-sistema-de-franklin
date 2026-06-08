@@ -33,14 +33,18 @@ trait HasCatalogLogic
      */
     public function alternarEstado(): bool
     {
-        $columna = property_exists($this, 'statusColumn') ? $this->statusColumn : 'activo';
-        
-        // Si no existe la propiedad, intentamos detectar si es estado_logico
-        if (!property_exists($this, 'statusColumn') && !isset($this->attributes['activo']) && isset($this->attributes['estado_logico'])) {
-            $columna = 'estado_logico';
+        $schema = config("repositorio_schema.{$this->getTable()}.columns", []);
+
+        if (array_key_exists('activo', $schema)) {
+            return $this->update(['activo' => !$this->activo]);
         }
 
-        return $this->update([$columna => !$this->$columna]);
+        if (array_key_exists('estado_logico', $schema)) {
+            return $this->update(['estado_logico' => !$this->estado_logico]);
+        }
+
+        $coluna = property_exists($this, 'statusColumn') ? $this->statusColumn : 'activo';
+        return $this->update([$coluna => !$this->$coluna]);
     }
 
     /**

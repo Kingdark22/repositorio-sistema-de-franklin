@@ -71,24 +71,16 @@
     @endif
 
     @if ($viewMode === 'list')
-        <div style="margin-bottom: 15px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px;">
+        <div style="margin-bottom: 15px; display: flex; align-items: center; gap: 12px;">
             <select wire:model.live="filterPrograma" style="padding: 4px; min-width: 200px;">
                 <option value="">Todos los programas</option>
                 @foreach ($programas as $p)
                     <option value="{{ $p->id }}">{{ $p->siglas }} - {{ $p->nombre }}</option>
                 @endforeach
             </select>
-            <select wire:model.live="filterTrayecto" style="padding: 4px; min-width: 120px;">
-                <option value="">Todos los trayectos</option>
-                @foreach ($trayectos as $t)
-                    <option value="{{ $t }}">Trayecto {{ $t }}</option>
-                @endforeach
-            </select>
-            <div style="display: flex; align-items: center; gap: 4px;">
-                <b>Buscar:</b>
-                <input wire:model.live.debounce.300ms="search" type="text" style="width: 400px; padding: 4px 6px; border-radius: 4px; border: 1px solid #999;"
-                    placeholder="Componente o a&ntilde;o...">
-            </div>
+            <b>Buscar:</b>
+            <input wire:model.live.debounce.300ms="search" type="text" style="width: 350px; padding: 4px 6px; border-radius: 4px; border: 1px solid #999;"
+                placeholder="Componente...">
             <span style="margin-left: auto;"></span>
             <button wire:click="create" class="cm-btn cm-btn-success" style="font-size: 13px; padding: 6px 14px;">
                 Adicionar Componente Nuevo
@@ -104,7 +96,7 @@
                     <tr style="background-color: #8bb2b7; color: #000; font-weight: bold;">
                         <th width="5%">N&deg;</th>
                         <th width="35%">Nombre del Documento Exigido</th>
-                        <th width="30%">Coordinaci&oacute;n Asociada y Trayecto/A&ntilde;o</th>
+                        <th width="30%">Coordinaci&oacute;n Asociada</th>
                         <th width="10%">Obligatorio</th>
                         <th width="10%">Estatus</th>
                         <th width="10%">Configurar</th>
@@ -118,8 +110,7 @@
                             <td align="center" style="font-weight: bold; padding: 8px;">
                                 {{ mb_strtoupper($item->nombre) }}</td>
                             <td align="center" style="font-weight: bold; font-style: italic; padding: 8px;">
-                                {{ $item->nombre_programa }} <br>
-                                <span style="color: #8b0000;">Trayecto/A&ntilde;o: {{ mb_strtoupper($item->anio) }}</span>
+                                {{ $item->nombre_programa }}
                             </td>
                             <td align="center">
                                 {!! $item->es_obligatorio
@@ -171,6 +162,11 @@
             <legend style="color: #000; font-weight: bold; font-style: italic; padding: 0 5px;">
                 {{ $editingId ? 'Editar Directriz de Componente' : 'Registrar Exigencias de Proyecto' }}
             </legend>
+            @error('rows')
+                <div style="background-color: #f8d7da; color: #721c24; padding: 10px; margin-bottom: 15px; border: 1px solid #f5c6cb; border-radius: 4px; font-weight: bold; text-align: center;">
+                    {{ $message }}
+                </div>
+            @enderror
             <form wire:submit="save" style="margin: 0;">
                 <table width="100%" border="0" cellpadding="4" cellspacing="0" style="font-size: 12px;">
                     <tr>
@@ -191,24 +187,6 @@
                                 </div>
                             @endif
                             @error('programa_id')
-                                <br><span style="color:red; font-size:10px;">{{ $message }}</span>
-                            @enderror
-                        </td>
-                    </tr>
-                    <tr>
-                        <td width="30%"><b>Aplica a los de Trayecto/A&ntilde;o:</b></td>
-                        <td width="70%">
-                            <select wire:model="anio" style="width: 30%; padding: 4px;">
-                                <option value="">Seleccione trayecto...</option>
-                                @forelse ($trayectosPrograma as $t)
-                                    <option value="{{ $t->tra_nombre }}">{{ $t->tra_nombre }}</option>
-                                @empty
-                                    @foreach (['I', 'II', 'III', 'IV', 'V', 'VI'] as $t)
-                                        <option value="{{ $t }}">{{ $t }}</option>
-                                    @endforeach
-                                @endforelse
-                            </select>
-                            @error('anio')
                                 <br><span style="color:red; font-size:10px;">{{ $message }}</span>
                             @enderror
                         </td>

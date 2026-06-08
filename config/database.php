@@ -132,6 +132,7 @@ return [
             'sslmode' => 'prefer',
             'options' => [
                 PDO::ATTR_TIMEOUT => 2,
+                'connect_timeout' => '2',
             ],
         ],
 
