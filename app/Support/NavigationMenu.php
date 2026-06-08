@@ -61,6 +61,7 @@ class NavigationMenu
             'canRegisterProject'   => $user->puedeRegistrarProyecto(),
             'canManageSystemConfig'=> $isAdmin || $isCoordinator,
             'canManageOrganizaciones' => $this->roles->esGestionador($user),
+            'canViewPublicaciones'   => $this->roles->esGestionador($user),
         ];
 
         Cache::put($sessionKey, $flags, now()->addSeconds(self::CACHE_TTL));
@@ -81,6 +82,7 @@ class NavigationMenu
             'canManageComponents', 'canValidateProjects', 'canRegisterProject',
             'canManageSystemConfig', 'canManageCoordinators',
             'canManageOrganizaciones',
+            'canViewPublicaciones',
         ], false);
     }
 }

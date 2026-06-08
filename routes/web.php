@@ -59,9 +59,6 @@ Route::middleware(['auth', 'active.role'])->group(function () {
     Route::middleware('role:administrador')->group(function () {
         // Módulo Organizaciones (solo Gestionador)
         Route::view('/organizaciones', 'organizaciones.index')->name('organizaciones.index');
-
-        // Módulo Gestión de Roles del Sistema (solo Gestionador)
-        Route::view('/gestion-roles', 'roles_sistema.index')->name('roles-sistema.index');
     });
 
     Route::middleware('role:administrador,estudiante')->group(function () {
@@ -82,7 +79,7 @@ Route::middleware(['auth', 'active.role'])->group(function () {
         Route::view('/proyectos/gestion', 'proyectos.index')->name('proyectos.gestion');
     });
 
-    Route::view('/publicaciones', 'publicaciones.index')->name('publicaciones.index');
+    Route::view('/publicaciones', 'publicaciones.index')->name('publicaciones.index')->middleware('role:gestionador');
 
     Route::get('/proyectos/crear', function () {
         return redirect()->route('proyectos.gestion', request()->query());

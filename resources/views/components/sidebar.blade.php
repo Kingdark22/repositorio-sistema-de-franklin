@@ -99,14 +99,11 @@ $nav = app(\App\Support\NavigationMenu::class)->flags(auth()->user());
                         class="{{ request()->routeIs('organizaciones.index') ? 'active-sub' : '' }}">
                         Gestionar Organizaciones
                     </a>
-                    <a href="{{ route('roles-sistema.index') }}"
-                        class="{{ request()->routeIs('roles-sistema.index') ? 'active-sub' : '' }}">
-                        Roles del Sistema
-                    </a>
                 </div>
             </li>
             @endif
 
+            @if ($nav['canViewPublicaciones'] ?? false)
             <li>
                 <div class="legacy-menu-item has-submenu">
                     Publicaciones
@@ -123,6 +120,7 @@ $nav = app(\App\Support\NavigationMenu::class)->flags(auth()->user());
                     </a>
                 </div>
             </li>
+            @endif
 
             <li>
                 <div class="legacy-menu-item has-submenu">
