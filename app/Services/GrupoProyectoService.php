@@ -398,6 +398,22 @@ class GrupoProyectoService
         ];
 
         $raw = $row->grp_contexto ?? null;
+
+        if (($raw instanceof \ArrayObject || $raw instanceof \Illuminate\Database\Eloquent\Casts\AsArrayObject) || (is_object($raw) && method_exists($raw, 'getArrayCopy'))) {
+            $ctx = (array) $raw;
+            if (count($ctx) > 0) {
+                return [
+                    'lap_codigo' => (int) ($ctx['lap_codigo'] ?? 0),
+                    'sec_codigo' => (int) ($ctx['sec_codigo'] ?? 0),
+                    'pro_codigo' => isset($ctx['pro_codigo']) ? (int) $ctx['pro_codigo'] : null,
+                    'lap_nombre' => trim((string) ($ctx['lap_nombre'] ?? '')),
+                    'sec_nombre' => trim((string) ($ctx['sec_nombre'] ?? '')),
+                    'pro_siglas' => trim((string) ($ctx['pro_siglas'] ?? '')),
+                    'pro_nombre' => trim((string) ($ctx['pro_nombre'] ?? '')),
+                ];
+            }
+        }
+
         if (is_string($raw) && $raw !== '') {
             $ctx = json_decode($raw, true);
             if (is_array($ctx)) {
@@ -413,11 +429,7 @@ class GrupoProyectoService
             }
         }
 
-        return array_merge($vacio, [
-            'lap_codigo' => (int) ($row->grp_lap_codigo ?? $row->gpb_lap_codigo ?? 0),
-            'sec_codigo' => (int) ($row->grp_sec_codigo ?? $row->gpb_sec_codigo ?? 0),
-            'pro_codigo' => ($row->grp_pro_codigo ?? $row->gpb_pro_codigo ?? null) ? (int) ($row->grp_pro_codigo ?? $row->gpb_pro_codigo) : null,
-        ]);
+        return $vacio;
     }
 
     /**

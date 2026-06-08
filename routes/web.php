@@ -3,6 +3,7 @@
 use App\Http\Controllers\MagicLoginController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
 
 Route::get('/', function () {
     return Auth::check() ? redirect()->route('dashboard') : redirect()->route('login');
@@ -94,6 +95,13 @@ Route::middleware(['auth', 'active.role'])->group(function () {
         Route::view('/configuracion/componentes', 'componentes.index')->name('componentes.index');
     });
 });
+
+Route::get('/documentos/{path}', function (string $path) {
+    if (!Storage::disk('public')->exists($path)) {
+        abort(404);
+    }
+    return Storage::disk('public')->response($path);
+})->where('path', '.*')->middleware('auth')->name('documentos.serve');
 
 // Público: proyectos publicados visibles sin autenticación
 Route::get('/publicaciones/publico', \App\Livewire\ProyectosPublicosManager::class)->name('publicaciones.publico');

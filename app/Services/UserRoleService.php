@@ -243,13 +243,21 @@ class UserRoleService
         $activeSessionRole = $this->getActiveRole($user);
 
         if ($activeSessionRole !== null) {
-            // Si hay un rol de sesión activo (simulado o real y válido)
             foreach ($requestedRoles as $requested) {
                 if ($this->roleMatches($requested, $activeSessionRole)) {
                     return true;
                 }
             }
-            return false; // El rol de sesión activo no coincide con ninguno de los roles solicitados
+            // Si el rol activo no coincide, igual verificar roles disponibles detectados
+            $availableDetectedRoles = array_keys($this->detectAvailableRoles($user));
+            foreach ($requestedRoles as $requested) {
+                foreach ($availableDetectedRoles as $owned) {
+                    if ($this->roleMatches($requested, $owned)) {
+                        return true;
+                    }
+                }
+            }
+            return false;
         }
 
         // Si no se establece ningún rol de sesión activo (significa que no hay un rol simulado, o el simulado era inválido/borrado)

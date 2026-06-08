@@ -171,7 +171,9 @@
                 <thead>
                     <tr style="background: #8bb2b7;">
                         <th>Nombre</th>
-                        <th>PNF/Sec.</th>
+                        <th>PNF</th>
+                        <th>Secci&oacute;n</th>
+                        <th>Lapso</th>
                         <th>Integrantes</th>
                         <th>Clave</th>
                         <th>Acciones</th>
@@ -181,13 +183,9 @@
                     @forelse($gruposList as $g)
                         <tr>
                             <td><b>{{ $g->nombre }}</b></td>
-                            <td>
-                                <b>{{ $g->pro_siglas ?: ($g->pro_nombre ?: 'PNF') }}</b>
-                                &middot; {{ $g->sec_nombre ?: 'Sección ' . $g->sec_codigo }}
-                                @if (!empty($g->lap_nombre))
-                                    <span style="color:#666;font-size:9px;">({{ $g->lap_nombre }})</span>
-                                @endif
-                            </td>
+                            <td>{{ $g->pro_siglas ?: ($g->pro_nombre ?: '—') }}</td>
+                            <td>{{ $g->sec_nombre ?: 'Sec. ' . $g->sec_codigo }}</td>
+                            <td>{{ $g->lap_nombre ?: '—' }}</td>
                             <td align="center">{{ $g->integrantes }}</td>
                             <td><code style="font-size:9px;">{{ $g->clave }}</code></td>
                             <td align="center" nowrap>
@@ -200,7 +198,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" align="center">No hay grupos registrados. Cree uno con integrantes de la
+                            <td colspan="7" align="center">No hay grupos registrados. Cree uno con integrantes de la
                                 secci&oacute;n.</td>
                         </tr>
                     @endforelse
@@ -250,6 +248,22 @@
                                 @endforeach
                             </select>
                         </div>
+                        @if($filterLapso && $filterSeccion)
+                            @php
+                                $lapLabel = $lapsos->firstWhere('lap_codigo', (int)$filterLapso)?->lap_nombre ?? 'Lapso #'.$filterLapso;
+                                $proLabel = $programas->firstWhere('pro_codigo', (int)$filterPrograma)?->pro_siglas ?? '—';
+                                $secLabel = $secciones->firstWhere('sec_codigo', (int)$filterSeccion)?->sec_nombre ?? 'Secci&oacute;n #'.$filterSeccion;
+                            @endphp
+                            <div style="margin-top:6px; background:#f0f7f0; border:1px solid #b8d4b8; border-radius:4px; padding:6px 10px; font-size:12px;">
+                                <b>Secci&oacute;n seleccionada:</b>
+                                {{ $proLabel }} &middot; {{ $secLabel }}
+                                @if($lapLabel) <span style="color:#666;">({{ $lapLabel }})</span>@endif
+                            </div>
+                        @else
+                            <p style="font-size: 11px; color: #856404; margin-top:4px;">
+                                Seleccione lapso, PNF y secci&oacute;n para ver los estudiantes candidatos.
+                            </p>
+                        @endif
                     </td>
                 </tr>
             </table>

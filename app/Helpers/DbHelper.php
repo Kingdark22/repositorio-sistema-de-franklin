@@ -18,7 +18,7 @@ class DbHelper
 
     protected static ?int $intranetPort = null;
 
-    protected const CACHE_TTL = 86400;
+    protected const CACHE_TTL = 60;
 
     protected const CACHE_KEY = 'dbhelper_intranet_available';
 
@@ -31,41 +31,38 @@ class DbHelper
             return self::$connectionName;
         }
 
-        $cached = Cache::get(self::CACHE_KEY);
-        if ($cached === 'intranet') {
-            if (self::intranetAlcanzable()) {
-                self::$connectionName = 'intranet';
-                self::$usingIntranet = true;
-                self::$resolved = true;
-                return self::$connectionName;
-            }
-            Cache::forget(self::CACHE_KEY);
-        }
-        if ($cached === 'simulacion') {
+        if (!self::intranetAlcanzable()) {
             self::$connectionName = 'simulacion';
             self::$usingIntranet = false;
+            self::$resolved = true;
+            Cache::forget(self::CACHE_KEY);
+            return self::$connectionName;
+        }
+
+        $cached = Cache::get(self::CACHE_KEY);
+        if ($cached === 'intranet') {
+            self::$connectionName = 'intranet';
+            self::$usingIntranet = true;
             self::$resolved = true;
             return self::$connectionName;
         }
 
-        if (self::intranetAlcanzable()) {
+        try {
+            $pdo = DB::connection('intranet')->getPdo();
+            $pdo->query('SELECT 1')->fetch();
+            self::$connectionName = 'intranet';
+            self::$usingIntranet = true;
+            Cache::put(self::CACHE_KEY, 'intranet', now()->addSeconds(self::CACHE_TTL));
             try {
-                $pdo = DB::connection('intranet')->getPdo();
                 $pdo->exec('SET statement_timeout = 1000');
-                $pdo->query('SELECT 1')->fetch();
-                self::$connectionName = 'intranet';
-                self::$usingIntranet = true;
-                Cache::put(self::CACHE_KEY, 'intranet', now()->addSeconds(self::CACHE_TTL));
             } catch (\Exception $e) {
-                Log::warning('Intranet no disponible (PDO/query): ' . $e->getMessage());
-                self::$connectionName = 'simulacion';
-                self::$usingIntranet = false;
-                Cache::put(self::CACHE_KEY, 'simulacion', now()->addSeconds(self::CACHE_TTL));
+                Log::warning('No se pudo ajustar statement_timeout (no crítico): ' . $e->getMessage());
             }
-        } else {
+        } catch (\Exception $e) {
+            Log::warning('Intranet no disponible (PDO/query): ' . $e->getMessage());
             self::$connectionName = 'simulacion';
             self::$usingIntranet = false;
-            Cache::put(self::CACHE_KEY, 'simulacion', now()->addSeconds(self::CACHE_TTL));
+            Cache::forget(self::CACHE_KEY);
         }
 
         self::$resolved = true;
