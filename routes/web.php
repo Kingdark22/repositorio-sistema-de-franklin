@@ -87,7 +87,7 @@ Route::middleware(['auth', 'active.role'])->group(function () {
     })->middleware('role:administrador,estudiante,coordinador,profesor proyecto')->name('proyectos.crear');
 
     Route::get('/validaciones', function () {
-        return redirect('/proyectos/gestion?tab=validar');
+        return redirect('/proyectos/gestion');
     })->middleware('role:administrador,coordinador,profesor proyecto')->name('validaciones.index');
 
     Route::middleware('role:administrador,coordinador')->group(function () {

@@ -290,10 +290,10 @@ class ProyectoGestionService
             'fecha_subida' => $datos['fecha_subida'],
             'asignacion_ct' => (bool) ($datos['asignacion_ct'] ?? false),
             'calificacion' => ($datos['calificacion'] ?? '') !== '' ? (int) $datos['calificacion'] : null,
-            'fecha_aprobacion' => ($datos['fecha_aprobacion'] ?? '') !== '' ? $datos['fecha_aprobacion'] : null,
+            'fecha_aprobacion' => ($datos['fecha_aprobacion'] ?? '') !== '' ? $datos['fecha_aprobacion'] : now()->format('Y-m-d'),
             'comunidad_id' => $datos['comunidad_id'],
             'equipo_ref' => $datos['equipo_seccion_clave'],
-            'estado_validacion' => 'pendiente',
+            'estado_validacion' => 'aprobado',
             'estado_logico' => true,
         ];
 
@@ -601,81 +601,12 @@ class ProyectoGestionService
 
     public function usuarioPuedeValidar(?User $user): bool
     {
-        $key = 'validar_' . ($user?->getKey() ?? 'null');
-        if (array_key_exists($key, static::$roleCache)) {
-            return static::$roleCache[$key];
-        }
-
-        if ($user === null) {
-            return static::$roleCache[$key] = false;
-        }
-
-        $userRoleService = app(UserRoleService::class);
-        $activeRole = $userRoleService->getActiveRole($user);
-
-        if ($activeRole !== null) {
-            if ($userRoleService->roleMatches('administrador', $activeRole)) {
-                return static::$roleCache[$key] = true;
-            }
-            if ($userRoleService->roleMatches('coordinador', $activeRole)) {
-                return static::$roleCache[$key] = true;
-            }
-            if ($userRoleService->roleMatches('profesor proyecto', $activeRole)) {
-                if ($userRoleService->allowsFreeSessionRoles()) {
-                    return static::$roleCache[$key] = true;
-                }
-                return static::$roleCache[$key] = $this->profesorIntranet->esProfesorProyectoVigente(trim((string) $user->usu_cedula));
-            }
-            return static::$roleCache[$key] = false;
-        }
-
-        $availableDetectedRoles = array_keys($userRoleService->detectAvailableRoles($user));
-
-        if (in_array('administrador', $availableDetectedRoles, true)) {
-            return static::$roleCache[$key] = true;
-        }
-
-        if (in_array('coordinador', $availableDetectedRoles, true)) {
-            return static::$roleCache[$key] = true;
-        }
-
-        if (in_array('profesor proyecto', $availableDetectedRoles, true)) {
-            return static::$roleCache[$key] = $this->profesorIntranet->esProfesorProyectoVigente(trim((string) $user->usu_cedula));
-        }
-
-        return static::$roleCache[$key] = false;
+        return false;
     }
 
     public function usuarioPuedeValidarProyecto(?User $user, Proyecto $proyecto): bool
     {
-        if ($user === null || ! $this->usuarioPuedeValidar($user)) {
-            return false;
-        }
-
-        if ($this->usuarioEsAdminEnSistema($user)) {
-            return true;
-        }
-
-        $disponibles = array_keys(app(UserRoleService::class)->detectAvailableRoles($user));
-
-        if (in_array('coordinador', $disponibles, true) && $user->hasRole('coordinador')) {
-            return true;
-        }
-
-        if (! $user->hasRole('profesor proyecto')) {
-            return false;
-        }
-
-        $partes = $this->equipoSeccion->parsearClave($proyecto->equipo_ref);
-        if ($partes === null) {
-            return false;
-        }
-
-        return $this->profesorIntranet->esProfesorProyectoEnLapso(
-            trim((string) $user->usu_cedula),
-            $partes['lap_codigo'],
-            ['seccion' => $partes['sec_codigo']]
-        );
+        return false;
     }
 
     protected function autorizarValidacionProyecto(?User $user, Proyecto $proyecto): void

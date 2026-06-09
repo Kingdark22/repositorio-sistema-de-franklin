@@ -2,10 +2,10 @@
 -- version 5.2.1
 -- https://www.phpmyadmin.net/
 --
--- Host: 127.0.0.1
--- Generation Time: Jun 02, 2026 at 12:27 PM
--- Server version: 10.4.32-MariaDB
--- PHP Version: 8.2.12
+-- Servidor: 127.0.0.1
+-- Tiempo de generación: 09-06-2026 a las 00:06:40
+-- Versión del servidor: 10.4.32-MariaDB
+-- Versión de PHP: 8.2.12
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -18,13 +18,13 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Database: `simulacion_sogac_daece`
+-- Base de datos: `simulacion_sogac_daece`
 --
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `estudiante`
+-- Estructura de tabla para la tabla `estudiante`
 --
 
 CREATE TABLE `estudiante` (
@@ -36,7 +36,7 @@ CREATE TABLE `estudiante` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data for table `estudiante`
+-- Volcado de datos para la tabla `estudiante`
 --
 
 INSERT INTO `estudiante` (`est_cedula`, `est_fecha_ingreso`, `est_cod_programa`, `est_ira`, `est_estatus`) VALUES
@@ -46,7 +46,7 @@ INSERT INTO `estudiante` (`est_cedula`, `est_fecha_ingreso`, `est_cod_programa`,
 -- --------------------------------------------------------
 
 --
--- Table structure for table `inscripcion`
+-- Estructura de tabla para la tabla `inscripcion`
 --
 
 CREATE TABLE `inscripcion` (
@@ -59,7 +59,7 @@ CREATE TABLE `inscripcion` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data for table `inscripcion`
+-- Volcado de datos para la tabla `inscripcion`
 --
 
 INSERT INTO `inscripcion` (`ins_codigo`, `ins_cedula`, `ins_cod_seccion_unidad_docente`, `ins_nota_final_100`, `ins_nota_final_20`, `ins_estatus`) VALUES
@@ -190,7 +190,7 @@ INSERT INTO `inscripcion` (`ins_codigo`, `ins_cedula`, `ins_cod_seccion_unidad_d
 -- --------------------------------------------------------
 
 --
--- Table structure for table `lapso_academico`
+-- Estructura de tabla para la tabla `lapso_academico`
 --
 
 CREATE TABLE `lapso_academico` (
@@ -203,7 +203,7 @@ CREATE TABLE `lapso_academico` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data for table `lapso_academico`
+-- Volcado de datos para la tabla `lapso_academico`
 --
 
 INSERT INTO `lapso_academico` (`lap_codigo`, `lap_nombre`, `lap_fecha_inicio`, `lap_fecha_fin`, `lap_estatus`, `lap_cerrado`) VALUES
@@ -260,12 +260,41 @@ INSERT INTO `lapso_academico` (`lap_codigo`, `lap_nombre`, `lap_fecha_inicio`, `
 (72, '2026-I', '2026-03-01', '2026-07-14', 'A', 'N'),
 (170, 'No Regist.', NULL, NULL, 'A', 'N'),
 (171, 'No Regist.', NULL, NULL, 'A', 'N'),
-(172, 'No Regist.', NULL, NULL, 'A', 'N');
+(172, 'No Regist.', NULL, NULL, 'A', 'N'),
+(173, 'No Regist.', NULL, NULL, 'A', 'N'),
+(174, 'No Regist.', NULL, NULL, 'A', 'N'),
+(175, 'No Regist.', NULL, NULL, 'A', 'N'),
+(176, 'No Regist.', NULL, NULL, 'A', 'N'),
+(177, 'No Regist.', NULL, NULL, 'A', 'N'),
+(178, 'No Regist.', NULL, NULL, 'A', 'N'),
+(179, 'No Regist.', NULL, NULL, 'A', 'N'),
+(180, 'No Regist.', NULL, NULL, 'A', 'N'),
+(181, 'No Regist.', NULL, NULL, 'A', 'N'),
+(182, 'No Regist.', NULL, NULL, 'A', 'N'),
+(183, 'No Regist.', NULL, NULL, 'A', 'N'),
+(184, 'No Regist.', NULL, NULL, 'A', 'N'),
+(185, 'No Regist.', NULL, NULL, 'A', 'N'),
+(186, 'No Regist.', NULL, NULL, 'A', 'N'),
+(187, 'No Regist.', NULL, NULL, 'A', 'N'),
+(188, 'No Regist.', NULL, NULL, 'A', 'N'),
+(189, 'No Regist.', NULL, NULL, 'A', 'N'),
+(190, 'No Regist.', NULL, NULL, 'A', 'N'),
+(191, 'No Regist.', NULL, NULL, 'A', 'N'),
+(192, 'No Regist.', NULL, NULL, 'A', 'N'),
+(193, 'No Regist.', NULL, NULL, 'A', 'N'),
+(194, 'No Regist.', NULL, NULL, 'A', 'N'),
+(195, 'No Regist.', NULL, NULL, 'A', 'N'),
+(196, 'No Regist.', NULL, NULL, 'A', 'N'),
+(197, 'No Regist.', NULL, NULL, 'A', 'N'),
+(198, 'No Regist.', NULL, NULL, 'A', 'N'),
+(199, 'No Regist.', NULL, NULL, 'A', 'N'),
+(200, 'No Regist.', NULL, NULL, 'A', 'N'),
+(201, 'No Regist.', NULL, NULL, 'A', 'N');
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `malla`
+-- Estructura de tabla para la tabla `malla`
 --
 
 CREATE TABLE `malla` (
@@ -277,7 +306,7 @@ CREATE TABLE `malla` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data for table `malla`
+-- Volcado de datos para la tabla `malla`
 --
 
 INSERT INTO `malla` (`mal_codigo`, `mal_nombre`, `mal_cod_programa`, `mal_cod_trayecto`, `mal_estatus`) VALUES
@@ -286,7 +315,7 @@ INSERT INTO `malla` (`mal_codigo`, `mal_nombre`, `mal_cod_programa`, `mal_cod_tr
 -- --------------------------------------------------------
 
 --
--- Table structure for table `migrations`
+-- Estructura de tabla para la tabla `migrations`
 --
 
 CREATE TABLE `migrations` (
@@ -296,7 +325,7 @@ CREATE TABLE `migrations` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Dumping data for table `migrations`
+-- Volcado de datos para la tabla `migrations`
 --
 
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES
@@ -305,7 +334,7 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES
 -- --------------------------------------------------------
 
 --
--- Table structure for table `persona`
+-- Estructura de tabla para la tabla `persona`
 --
 
 CREATE TABLE `persona` (
@@ -319,17 +348,18 @@ CREATE TABLE `persona` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data for table `persona`
+-- Volcado de datos para la tabla `persona`
 --
 
 INSERT INTO `persona` (`per_cedula`, `per_nombres`, `per_apellidos`, `per_genero`, `per_fecha_nacimiento`, `per_cod_pais`, `per_estatus`) VALUES
+('13354832', 'USUARIO INTRANET', 'PRUEBA', '0', '1980-01-01', '296', 'A'),
 ('31057795    ', 'JHOEL ALEXIS', 'LUGO MARTINEZ', '0', '2005-11-14', '296', 'A'),
 ('31306741    ', 'FERNANDO ANTONIO', 'LEON LANDER', '0', '2005-08-22', '296', 'A');
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `programa`
+-- Estructura de tabla para la tabla `programa`
 --
 
 CREATE TABLE `programa` (
@@ -340,7 +370,7 @@ CREATE TABLE `programa` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data for table `programa`
+-- Volcado de datos para la tabla `programa`
 --
 
 INSERT INTO `programa` (`pro_codigo`, `pro_nombre`, `pro_siglas`, `pro_estatus`) VALUES
@@ -358,7 +388,7 @@ INSERT INTO `programa` (`pro_codigo`, `pro_nombre`, `pro_siglas`, `pro_estatus`)
 -- --------------------------------------------------------
 
 --
--- Table structure for table `rol`
+-- Estructura de tabla para la tabla `rol`
 --
 
 CREATE TABLE `rol` (
@@ -368,7 +398,7 @@ CREATE TABLE `rol` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data for table `rol`
+-- Volcado de datos para la tabla `rol`
 --
 
 INSERT INTO `rol` (`rol_codigo`, `rol_nombre`, `rol_estatus`) VALUES
@@ -423,7 +453,7 @@ INSERT INTO `rol` (`rol_codigo`, `rol_nombre`, `rol_estatus`) VALUES
 -- --------------------------------------------------------
 
 --
--- Table structure for table `seccion`
+-- Estructura de tabla para la tabla `seccion`
 --
 
 CREATE TABLE `seccion` (
@@ -437,7 +467,7 @@ CREATE TABLE `seccion` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data for table `seccion`
+-- Volcado de datos para la tabla `seccion`
 --
 
 INSERT INTO `seccion` (`sec_codigo`, `sec_nombre`, `sec_cod_lapso_academico`, `sec_cod_malla`, `sec_capacidad`, `sec_inscritos`, `sec_estatus`) VALUES
@@ -462,7 +492,7 @@ INSERT INTO `seccion` (`sec_codigo`, `sec_nombre`, `sec_cod_lapso_academico`, `s
 -- --------------------------------------------------------
 
 --
--- Table structure for table `seccion_unidad_docente`
+-- Estructura de tabla para la tabla `seccion_unidad_docente`
 --
 
 CREATE TABLE `seccion_unidad_docente` (
@@ -478,7 +508,7 @@ CREATE TABLE `seccion_unidad_docente` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Dumping data for table `seccion_unidad_docente`
+-- Volcado de datos para la tabla `seccion_unidad_docente`
 --
 
 INSERT INTO `seccion_unidad_docente` (`sud_codigo`, `sud_capacidad`, `sud_nro_inscritos`, `sud_cod_seccion`, `sud_ced_docente`, `sud_cod_unidad`, `sud_estatus`, `sud_condicion`, `sud_nameplan`) VALUES
@@ -4657,7 +4687,7 @@ INSERT INTO `seccion_unidad_docente` (`sud_codigo`, `sud_capacidad`, `sud_nro_in
 -- --------------------------------------------------------
 
 --
--- Table structure for table `semestre`
+-- Estructura de tabla para la tabla `semestre`
 --
 
 CREATE TABLE `semestre` (
@@ -4670,7 +4700,7 @@ CREATE TABLE `semestre` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `trayecto`
+-- Estructura de tabla para la tabla `trayecto`
 --
 
 CREATE TABLE `trayecto` (
@@ -4680,7 +4710,7 @@ CREATE TABLE `trayecto` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data for table `trayecto`
+-- Volcado de datos para la tabla `trayecto`
 --
 
 INSERT INTO `trayecto` (`tra_codigo`, `tra_nombre`, `tra_estatus`) VALUES
@@ -4689,7 +4719,7 @@ INSERT INTO `trayecto` (`tra_codigo`, `tra_nombre`, `tra_estatus`) VALUES
 -- --------------------------------------------------------
 
 --
--- Table structure for table `unidad_curricular`
+-- Estructura de tabla para la tabla `unidad_curricular`
 --
 
 CREATE TABLE `unidad_curricular` (
@@ -4704,7 +4734,7 @@ CREATE TABLE `unidad_curricular` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `usuario`
+-- Estructura de tabla para la tabla `usuario`
 --
 
 CREATE TABLE `usuario` (
@@ -4717,38 +4747,39 @@ CREATE TABLE `usuario` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data for table `usuario`
+-- Volcado de datos para la tabla `usuario`
 --
 
 INSERT INTO `usuario` (`usu_codigo`, `usu_cedula`, `usu_nombre`, `usu_clave`, `usu_cod_rol`, `usu_estatus`) VALUES
-(39156, '31306741    ', '31306741', '$2y$10$n1K/L/RTcYOHnv0KO2iiLehSepq8XYPRF11FOAeYlr1VW6uvoyi8W', 4, 'A');
+(39156, '31306741    ', '31306741', '$2y$10$n1K/L/RTcYOHnv0KO2iiLehSepq8XYPRF11FOAeYlr1VW6uvoyi8W', 4, 'A'),
+(39172, '13354832', '13354832', '$2y$10$6H6mAQrsHwSAa8YY6wpWLeL3jxCCT.IPqjJvo0CRLLFha7aliawae', 1, 'A');
 
 --
--- Indexes for dumped tables
+-- Índices para tablas volcadas
 --
 
 --
--- Indexes for table `estudiante`
+-- Indices de la tabla `estudiante`
 --
 ALTER TABLE `estudiante`
   ADD PRIMARY KEY (`est_cedula`),
   ADD KEY `est_cod_programa` (`est_cod_programa`);
 
 --
--- Indexes for table `inscripcion`
+-- Indices de la tabla `inscripcion`
 --
 ALTER TABLE `inscripcion`
   ADD PRIMARY KEY (`ins_codigo`),
   ADD KEY `ins_cedula` (`ins_cedula`);
 
 --
--- Indexes for table `lapso_academico`
+-- Indices de la tabla `lapso_academico`
 --
 ALTER TABLE `lapso_academico`
   ADD PRIMARY KEY (`lap_codigo`);
 
 --
--- Indexes for table `malla`
+-- Indices de la tabla `malla`
 --
 ALTER TABLE `malla`
   ADD PRIMARY KEY (`mal_codigo`),
@@ -4756,31 +4787,31 @@ ALTER TABLE `malla`
   ADD KEY `fk_malla_trayecto` (`mal_cod_trayecto`);
 
 --
--- Indexes for table `migrations`
+-- Indices de la tabla `migrations`
 --
 ALTER TABLE `migrations`
   ADD PRIMARY KEY (`id`);
 
 --
--- Indexes for table `persona`
+-- Indices de la tabla `persona`
 --
 ALTER TABLE `persona`
   ADD PRIMARY KEY (`per_cedula`);
 
 --
--- Indexes for table `programa`
+-- Indices de la tabla `programa`
 --
 ALTER TABLE `programa`
   ADD PRIMARY KEY (`pro_codigo`);
 
 --
--- Indexes for table `rol`
+-- Indices de la tabla `rol`
 --
 ALTER TABLE `rol`
   ADD PRIMARY KEY (`rol_codigo`);
 
 --
--- Indexes for table `seccion`
+-- Indices de la tabla `seccion`
 --
 ALTER TABLE `seccion`
   ADD PRIMARY KEY (`sec_codigo`),
@@ -4788,33 +4819,33 @@ ALTER TABLE `seccion`
   ADD KEY `sec_cod_malla` (`sec_cod_malla`);
 
 --
--- Indexes for table `seccion_unidad_docente`
+-- Indices de la tabla `seccion_unidad_docente`
 --
 ALTER TABLE `seccion_unidad_docente`
   ADD PRIMARY KEY (`sud_codigo`);
 
 --
--- Indexes for table `semestre`
+-- Indices de la tabla `semestre`
 --
 ALTER TABLE `semestre`
   ADD PRIMARY KEY (`sem_codigo`),
   ADD KEY `sem_cod_trayecto` (`sem_cod_trayecto`);
 
 --
--- Indexes for table `trayecto`
+-- Indices de la tabla `trayecto`
 --
 ALTER TABLE `trayecto`
   ADD PRIMARY KEY (`tra_codigo`);
 
 --
--- Indexes for table `unidad_curricular`
+-- Indices de la tabla `unidad_curricular`
 --
 ALTER TABLE `unidad_curricular`
   ADD PRIMARY KEY (`ucu_codigo`),
   ADD KEY `ucu_cod_malla` (`ucu_cod_malla`);
 
 --
--- Indexes for table `usuario`
+-- Indices de la tabla `usuario`
 --
 ALTER TABLE `usuario`
   ADD PRIMARY KEY (`usu_codigo`),
@@ -4822,120 +4853,120 @@ ALTER TABLE `usuario`
   ADD KEY `usu_cod_rol` (`usu_cod_rol`);
 
 --
--- AUTO_INCREMENT for dumped tables
+-- AUTO_INCREMENT de las tablas volcadas
 --
 
 --
--- AUTO_INCREMENT for table `inscripcion`
+-- AUTO_INCREMENT de la tabla `inscripcion`
 --
 ALTER TABLE `inscripcion`
   MODIFY `ins_codigo` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=779863;
 
 --
--- AUTO_INCREMENT for table `lapso_academico`
+-- AUTO_INCREMENT de la tabla `lapso_academico`
 --
 ALTER TABLE `lapso_academico`
-  MODIFY `lap_codigo` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=173;
+  MODIFY `lap_codigo` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=202;
 
 --
--- AUTO_INCREMENT for table `malla`
+-- AUTO_INCREMENT de la tabla `malla`
 --
 ALTER TABLE `malla`
   MODIFY `mal_codigo` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26;
 
 --
--- AUTO_INCREMENT for table `migrations`
+-- AUTO_INCREMENT de la tabla `migrations`
 --
 ALTER TABLE `migrations`
   MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
--- AUTO_INCREMENT for table `programa`
+-- AUTO_INCREMENT de la tabla `programa`
 --
 ALTER TABLE `programa`
   MODIFY `pro_codigo` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
--- AUTO_INCREMENT for table `rol`
+-- AUTO_INCREMENT de la tabla `rol`
 --
 ALTER TABLE `rol`
   MODIFY `rol_codigo` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=48;
 
 --
--- AUTO_INCREMENT for table `seccion`
+-- AUTO_INCREMENT de la tabla `seccion`
 --
 ALTER TABLE `seccion`
   MODIFY `sec_codigo` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11645;
 
 --
--- AUTO_INCREMENT for table `semestre`
+-- AUTO_INCREMENT de la tabla `semestre`
 --
 ALTER TABLE `semestre`
   MODIFY `sem_codigo` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `trayecto`
+-- AUTO_INCREMENT de la tabla `trayecto`
 --
 ALTER TABLE `trayecto`
   MODIFY `tra_codigo` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
--- AUTO_INCREMENT for table `unidad_curricular`
+-- AUTO_INCREMENT de la tabla `unidad_curricular`
 --
 ALTER TABLE `unidad_curricular`
   MODIFY `ucu_codigo` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `usuario`
+-- AUTO_INCREMENT de la tabla `usuario`
 --
 ALTER TABLE `usuario`
-  MODIFY `usu_codigo` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=39171;
+  MODIFY `usu_codigo` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=39174;
 
 --
--- Constraints for dumped tables
+-- Restricciones para tablas volcadas
 --
 
 --
--- Constraints for table `estudiante`
+-- Filtros para la tabla `estudiante`
 --
 ALTER TABLE `estudiante`
   ADD CONSTRAINT `estudiante_ibfk_1` FOREIGN KEY (`est_cedula`) REFERENCES `persona` (`per_cedula`),
   ADD CONSTRAINT `estudiante_ibfk_2` FOREIGN KEY (`est_cod_programa`) REFERENCES `programa` (`pro_codigo`);
 
 --
--- Constraints for table `inscripcion`
+-- Filtros para la tabla `inscripcion`
 --
 ALTER TABLE `inscripcion`
   ADD CONSTRAINT `inscripcion_ibfk_1` FOREIGN KEY (`ins_cedula`) REFERENCES `estudiante` (`est_cedula`);
 
 --
--- Constraints for table `malla`
+-- Filtros para la tabla `malla`
 --
 ALTER TABLE `malla`
   ADD CONSTRAINT `fk_malla_trayecto` FOREIGN KEY (`mal_cod_trayecto`) REFERENCES `trayecto` (`tra_codigo`) ON UPDATE CASCADE,
   ADD CONSTRAINT `malla_ibfk_1` FOREIGN KEY (`mal_cod_programa`) REFERENCES `programa` (`pro_codigo`);
 
 --
--- Constraints for table `seccion`
+-- Filtros para la tabla `seccion`
 --
 ALTER TABLE `seccion`
   ADD CONSTRAINT `seccion_ibfk_1` FOREIGN KEY (`sec_cod_lapso_academico`) REFERENCES `lapso_academico` (`lap_codigo`),
   ADD CONSTRAINT `seccion_ibfk_2` FOREIGN KEY (`sec_cod_malla`) REFERENCES `malla` (`mal_codigo`);
 
 --
--- Constraints for table `semestre`
+-- Filtros para la tabla `semestre`
 --
 ALTER TABLE `semestre`
   ADD CONSTRAINT `semestre_ibfk_1` FOREIGN KEY (`sem_cod_trayecto`) REFERENCES `trayecto` (`tra_codigo`);
 
 --
--- Constraints for table `unidad_curricular`
+-- Filtros para la tabla `unidad_curricular`
 --
 ALTER TABLE `unidad_curricular`
   ADD CONSTRAINT `unidad_curricular_ibfk_1` FOREIGN KEY (`ucu_cod_malla`) REFERENCES `malla` (`mal_codigo`);
 
 --
--- Constraints for table `usuario`
+-- Filtros para la tabla `usuario`
 --
 ALTER TABLE `usuario`
   ADD CONSTRAINT `usuario_ibfk_1` FOREIGN KEY (`usu_cedula`) REFERENCES `persona` (`per_cedula`),

@@ -49,7 +49,24 @@ class Login extends Component
                 return;
             }
 
-            if (! password_verify(strtoupper($passTrim), trim($extUser->usu_clave ?? ''))) {
+            $dbHash = trim($extUser->usu_clave ?? '');
+            $passIsValid = false;
+
+            if (str_starts_with($dbHash, '$2')) {
+                // Bcrypt hash
+                if (password_verify($passTrim, $dbHash) || password_verify(strtoupper($passTrim), $dbHash)) {
+                    $passIsValid = true;
+                }
+            } else {
+                // Legacy hashes: sha1(md5($password)) or sha1(md5(strtoupper($password)))
+                $legacyHash = sha1(md5($passTrim));
+                $legacyHashUpper = sha1(md5(strtoupper($passTrim)));
+                if (hash_equals($dbHash, $legacyHash) || hash_equals($dbHash, $legacyHashUpper)) {
+                    $passIsValid = true;
+                }
+            }
+
+            if (! $passIsValid) {
                 $this->error = 'Usuario o contraseña incorrectos.';
                 $this->cargando = false;
                 return;
