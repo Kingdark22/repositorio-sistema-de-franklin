@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 09-06-2026 a las 00:06:40
+-- Tiempo de generación: 09-06-2026 a las 14:14:05
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -289,7 +289,9 @@ INSERT INTO `lapso_academico` (`lap_codigo`, `lap_nombre`, `lap_fecha_inicio`, `
 (198, 'No Regist.', NULL, NULL, 'A', 'N'),
 (199, 'No Regist.', NULL, NULL, 'A', 'N'),
 (200, 'No Regist.', NULL, NULL, 'A', 'N'),
-(201, 'No Regist.', NULL, NULL, 'A', 'N');
+(201, 'No Regist.', NULL, NULL, 'A', 'N'),
+(202, 'No Regist.', NULL, NULL, 'A', 'N'),
+(203, 'No Regist.', NULL, NULL, 'A', 'N');
 
 -- --------------------------------------------------------
 
@@ -352,7 +354,6 @@ CREATE TABLE `persona` (
 --
 
 INSERT INTO `persona` (`per_cedula`, `per_nombres`, `per_apellidos`, `per_genero`, `per_fecha_nacimiento`, `per_cod_pais`, `per_estatus`) VALUES
-('13354832', 'USUARIO INTRANET', 'PRUEBA', '0', '1980-01-01', '296', 'A'),
 ('31057795    ', 'JHOEL ALEXIS', 'LUGO MARTINEZ', '0', '2005-11-14', '296', 'A'),
 ('31306741    ', 'FERNANDO ANTONIO', 'LEON LANDER', '0', '2005-08-22', '296', 'A');
 
@@ -4751,8 +4752,7 @@ CREATE TABLE `usuario` (
 --
 
 INSERT INTO `usuario` (`usu_codigo`, `usu_cedula`, `usu_nombre`, `usu_clave`, `usu_cod_rol`, `usu_estatus`) VALUES
-(39156, '31306741    ', '31306741', '$2y$10$n1K/L/RTcYOHnv0KO2iiLehSepq8XYPRF11FOAeYlr1VW6uvoyi8W', 4, 'A'),
-(39172, '13354832', '13354832', '$2y$10$6H6mAQrsHwSAa8YY6wpWLeL3jxCCT.IPqjJvo0CRLLFha7aliawae', 1, 'A');
+(39156, '31306741    ', '31306741', '$2y$10$n1K/L/RTcYOHnv0KO2iiLehSepq8XYPRF11FOAeYlr1VW6uvoyi8W', 4, 'A');
 
 --
 -- Índices para tablas volcadas
@@ -4866,7 +4866,7 @@ ALTER TABLE `inscripcion`
 -- AUTO_INCREMENT de la tabla `lapso_academico`
 --
 ALTER TABLE `lapso_academico`
-  MODIFY `lap_codigo` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=202;
+  MODIFY `lap_codigo` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=204;
 
 --
 -- AUTO_INCREMENT de la tabla `malla`

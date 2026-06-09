@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 08-06-2026 a las 21:11:06
+-- Tiempo de generación: 09-06-2026 a las 14:08:38
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -171,17 +171,9 @@ CREATE TABLE `comunidad_contactos` (
 CREATE TABLE `departamento` (
   `dep_codigo` int(11) NOT NULL,
   `dep_nombre` varchar(255) DEFAULT NULL,
-  `dep_cargo` varchar(255) DEFAULT NULL,
+  `dep_cargo` longtext NOT NULL,
   `dep_uex_codigo` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Volcado de datos para la tabla `departamento`
---
-
-INSERT INTO `departamento` (`dep_codigo`, `dep_nombre`, `dep_cargo`, `dep_uex_codigo`) VALUES
-(2, 'DEP B', 'CARGO B', NULL),
-(3, 'DEP C', 'CARGO C', NULL);
 
 -- --------------------------------------------------------
 
@@ -290,8 +282,8 @@ CREATE TABLE `grupo_proyecto_modulo` (
 --
 
 INSERT INTO `grupo_proyecto_modulo` (`grp_codigo`, `grp_nombre`, `grp_contexto`, `grp_com_codigo`, `grp_creador_cedula`, `grp_miembros`, `created_at`, `updated_at`) VALUES
-(1, 'peru', '{\"lap_codigo\":72,\"sec_codigo\":11588,\"pro_codigo\":4,\"lap_nombre\":\"2026-I\",\"sec_nombre\":\"631R\",\"pro_siglas\":\"PNFINF\",\"pro_nombre\":\"PROGRAMA NACIONAL DE FORMACIÓN EN INFORMÁTICA\",\"tra_codigo\":5,\"trayecto_nombre\":\"IV\"}', NULL, '13354832', '[{\"cedula\":\"26836521\",\"rol_id\":2,\"nombre\":\"RAINIEL JHOSUE\",\"apellido\":\"MARTINEZ GIL\"},{\"cedula\":\"31144855\",\"rol_id\":2,\"nombre\":\"MARIA GABRIELA\",\"apellido\":\"RODRIGUEZ SANDOVAL\"},{\"cedula\":\"31187176\",\"rol_id\":1,\"nombre\":\"JOSUE MIGUEL\",\"apellido\":\"FARIAS BARRIOS\"}]', '2026-06-06 16:51:12', '2026-06-06 16:51:12'),
-(2, 'repositorio', '{\"lap_codigo\":72,\"sec_codigo\":11587,\"pro_codigo\":4,\"lap_nombre\":\"2026-I\",\"sec_nombre\":\"631\",\"pro_siglas\":\"PNFINF\",\"pro_nombre\":\"PROGRAMA NACIONAL DE FORMACIÓN EN INFORMÁTICA\",\"tra_codigo\":5,\"trayecto_nombre\":\"IV\"}', NULL, '13354832', '[{\"cedula\":\"31306741\",\"rol_id\":2,\"nombre\":\"FERNANDO ANTONIO\",\"apellido\":\"LEON LANDER\"},{\"cedula\":\"31057795\",\"rol_id\":2,\"nombre\":\"JHOEL ALEXIS\",\"apellido\":\"LUGO MARTINEZ\"},{\"cedula\":\"30966221\",\"rol_id\":2,\"nombre\":\"EMANUEL ISAI\",\"apellido\":\"PERAZA GONZALEZ\"},{\"cedula\":\"31490175\",\"rol_id\":1,\"nombre\":\"MARIA FERNANDA\",\"apellido\":\"PEREIRA BARCO\"}]', '2026-06-06 21:25:53', '2026-06-06 21:25:53'),
+(1, 'peru', '{\"lap_codigo\":72,\"sec_codigo\":11588,\"pro_codigo\":4,\"lap_nombre\":\"2026-I\",\"sec_nombre\":\"631R\",\"pro_siglas\":\"PNFINF\",\"pro_nombre\":\"PROGRAMA NACIONAL DE FORMACIÓN EN INFORMÁTICA\",\"tra_codigo\":5,\"trayecto_nombre\":\"IV\"}', 1, '13354832', '[{\"cedula\":\"26836521\",\"rol_id\":2,\"nombre\":\"RAINIEL JHOSUE\",\"apellido\":\"MARTINEZ GIL\"},{\"cedula\":\"31144855\",\"rol_id\":2,\"nombre\":\"MARIA GABRIELA\",\"apellido\":\"RODRIGUEZ SANDOVAL\"},{\"cedula\":\"31187176\",\"rol_id\":1,\"nombre\":\"JOSUE MIGUEL\",\"apellido\":\"FARIAS BARRIOS\"}]', '2026-06-06 16:51:12', '2026-06-09 09:16:05'),
+(2, 'repositorio', '{\"lap_codigo\":72,\"sec_codigo\":11587,\"pro_codigo\":4,\"lap_nombre\":\"2026-I\",\"sec_nombre\":\"631\",\"pro_siglas\":\"PNFINF\",\"pro_nombre\":\"PROGRAMA NACIONAL DE FORMACIÓN EN INFORMÁTICA\",\"tra_codigo\":5,\"trayecto_nombre\":\"IV\"}', 1, '13354832', '[{\"cedula\":\"31306741\",\"rol_id\":2,\"nombre\":\"FERNANDO ANTONIO\",\"apellido\":\"LEON LANDER\"},{\"cedula\":\"31057795\",\"rol_id\":2,\"nombre\":\"JHOEL ALEXIS\",\"apellido\":\"LUGO MARTINEZ\"},{\"cedula\":\"30966221\",\"rol_id\":2,\"nombre\":\"EMANUEL ISAI\",\"apellido\":\"PERAZA GONZALEZ\"},{\"cedula\":\"31490175\",\"rol_id\":1,\"nombre\":\"MARIA FERNANDA\",\"apellido\":\"PEREIRA BARCO\"}]', '2026-06-06 21:25:53', '2026-06-09 09:15:52'),
 (3, 'planificaciones', '[]', 1, '13354832', '[{\"cedula\":\"31114131\",\"rol_id\":2,\"nombre\":\"ENMANUEL GABRIEL\",\"apellido\":\"SALAS ADANS\"},{\"cedula\":\"31659136\",\"rol_id\":2,\"nombre\":\"MAIKOL DAVID\",\"apellido\":\"RODRIGUEZ OJEDA\"},{\"cedula\":\"31356417\",\"rol_id\":2,\"nombre\":\"HENRY ALEJANDRO\",\"apellido\":\"JIMENEZ LEAL\"},{\"cedula\":\"31009367\",\"rol_id\":2,\"nombre\":\"ALEJANDRO DAVID\",\"apellido\":\"FENOMENO MENDOZA\"},{\"cedula\":\"31215545\",\"rol_id\":1,\"nombre\":\"NASSER JOSE\",\"apellido\":\"DABOIN ROJAS\"},{\"cedula\":\"31306263\",\"rol_id\":2,\"nombre\":\"DIANA ALEJANDRA\",\"apellido\":\"CORDERO TORRES\"},{\"cedula\":\"31162406\",\"rol_id\":2,\"nombre\":\"LUIS FELIPE\",\"apellido\":\"CASTILLO PARRA\"}]', '2026-06-08 12:58:20', '2026-06-08 13:02:25');
 
 -- --------------------------------------------------------
@@ -771,7 +763,6 @@ CREATE TABLE `organizacion` (
   `org_rif` varchar(45) DEFAULT NULL,
   `org_correo` varchar(255) DEFAULT NULL,
   `org_direccion` text DEFAULT NULL,
-  `org_cargo` varchar(255) DEFAULT NULL,
   `org_dep_codigo` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -779,9 +770,8 @@ CREATE TABLE `organizacion` (
 -- Volcado de datos para la tabla `organizacion`
 --
 
-INSERT INTO `organizacion` (`org_codigo`, `org_nombre`, `org_rif`, `org_correo`, `org_direccion`, `org_cargo`, `org_dep_codigo`) VALUES
-(2, 'ORGANIZACION TEST INLINE', 'J-99999999-9', NULL, 'TEST DIRECTION', 'TEST CARGO', 2),
-(3, 'ORGANIZACION TEST INLINE', 'J-99999999-9', NULL, 'TEST DIRECTION', 'TEST CARGO', 3);
+INSERT INTO `organizacion` (`org_codigo`, `org_nombre`, `org_rif`, `org_correo`, `org_direccion`, `org_dep_codigo`) VALUES
+(6, 'organizacion de prueba', '-', 'antoniolander18@gmail.com', NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -1270,7 +1260,7 @@ ALTER TABLE `municipios`
 -- AUTO_INCREMENT de la tabla `organizacion`
 --
 ALTER TABLE `organizacion`
-  MODIFY `org_codigo` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `org_codigo` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT de la tabla `org_contactos`

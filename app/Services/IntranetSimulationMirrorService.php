@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Helpers\DbHelper;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -81,7 +82,8 @@ class IntranetSimulationMirrorService
         if (empty($rowsArray)) return 0;
 
         foreach ($rowsArray as $row) {
-            $payload = $this->filterRowForConnection($sim, $table, (array) $row);
+            $rowData = $row instanceof Model ? $row->getAttributes() : (array) $row;
+            $payload = $this->filterRowForConnection($sim, $table, $rowData);
             if ($payload === [] || ($pk && ! array_key_exists($pk, $payload))) {
                 continue;
             }
