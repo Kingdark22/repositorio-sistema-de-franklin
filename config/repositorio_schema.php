@@ -136,7 +136,6 @@ return [
             'rif'              => 'org_rif',
             'correo'           => 'org_correo',
             'direccion'        => 'org_direccion',
-            'cargo'            => 'org_cargo',
             'dep_codigo'       => 'org_dep_codigo',
         ],
     ],

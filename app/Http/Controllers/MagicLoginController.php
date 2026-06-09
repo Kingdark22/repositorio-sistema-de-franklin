@@ -123,16 +123,12 @@ class MagicLoginController extends Controller
                 </body></html>', 404);
             }
 
-            // 5. Login
-            // 6. Regenerar sesión primero para evitar session fixation attacks y asegurar persistencia
-            $request->session()->regenerate();
-
+            // 5. Login + regenerar sesión
             Auth::login($user);
-            Log::info('User authenticated: ' . Auth::check() ? 'true' : 'false');
+            $request->session()->regenerate();
+            Log::info('User authenticated: ' . (Auth::check() ? 'true' : 'false'));
 
             app(IntranetSimulationMirrorService::class)->mirrorUserContext($cedula);
-
-            // 6. Regenerar sesión
 
             $roleService = app(UserRoleService::class);
 

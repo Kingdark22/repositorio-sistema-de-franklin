@@ -95,7 +95,7 @@ class ProyectosPublicadosManager extends Component
         $this->searchOrg = '';
         $this->selectedEmails = [];
         $this->emailSubject = 'Proyectos aprobados - Sistema de Gestión';
-        $this->emailBody = 'Se adjuntan los proyectos aprobados seleccionados.';
+        $this->emailBody = '';
         $this->selectAllOrgs = false;
     }
 
@@ -182,16 +182,16 @@ class ProyectosPublicadosManager extends Component
             'selectedProjects' => 'required|array|min:1',
             'selectedEmails' => 'required|array|min:1',
             'emailSubject' => 'required|min:5|max:255',
-            'emailBody' => 'required|min:10',
+            'emailBody' => 'nullable|max:5000',
         ], [
             'selectedProjects.required' => 'Debe seleccionar al menos un proyecto.',
             'selectedEmails.required' => 'Debe seleccionar al menos un destinatario.',
             'emailSubject.required' => 'El asunto es obligatorio.',
-            'emailBody.required' => 'El mensaje es obligatorio.',
         ]);
 
         $proyectos = Proyecto::whereIn('pry_codigo', $this->selectedProjects)
             ->where('estado_validacion', 'aprobado')
+            ->with('comunidad')
             ->get();
 
         if ($proyectos->isEmpty()) {
@@ -201,7 +201,9 @@ class ProyectosPublicadosManager extends Component
         }
 
         try {
-            Mail::raw($this->emailBody, function ($message) use ($proyectos) {
+            $html = $this->buildEmailHtml($proyectos);
+
+            Mail::html($html, function ($message) use ($proyectos) {
                 $message->to($this->selectedEmails)
                     ->subject($this->emailSubject);
 
@@ -215,6 +217,22 @@ class ProyectosPublicadosManager extends Component
                             ]);
                         }
                     }
+                    $docs = $proyecto->documentos ?? [];
+                    if (is_array($docs)) {
+                        foreach ($docs as $i => $doc) {
+                            if (!empty($doc['archivo_path'])) {
+                                $docPath = storage_path('app/public/' . $doc['archivo_path']);
+                                if (file_exists($docPath)) {
+                                    $compName = !empty($doc['componente_nombre']) ? $doc['componente_nombre'] : 'documento';
+                                    $safeName = preg_replace('/[^a-zA-Z0-9._-]/', '_', $compName) . '_' . ($i + 1) . '.pdf';
+                                    $message->attach($docPath, [
+                                        'as' => $safeName,
+                                        'mime' => 'application/pdf',
+                                    ]);
+                                }
+                            }
+                        }
+                    }
                 }
             });
 
@@ -226,6 +244,30 @@ class ProyectosPublicadosManager extends Component
             $this->tipoMensaje = 'error';
             $this->mensaje = 'Error al enviar: ' . $e->getMessage();
         }
+    }
+
+    protected function buildEmailHtml($proyectos): string
+    {
+        $html = '<html><head><meta charset="UTF-8"></head><body style="font-family:Arial,sans-serif;font-size:13px;color:#333;">';
+
+        $html .= '<div style="background:#8b0000;color:#fff;padding:12px;border-radius:6px;margin-bottom:15px;">';
+        $html .= '<h2 style="margin:0;font-size:16px;">Sistema de Gesti&oacute;n de Proyectos</h2>';
+        $html .= '<p style="margin:4px 0 0 0;font-size:12px;opacity:0.9;">Proyectos aprobados</p>';
+        $html .= '</div>';
+
+        if (trim($this->emailBody) !== '') {
+            $html .= '<div style="background:#f9f9f9;border:1px solid #ddd;border-radius:4px;padding:12px;margin-bottom:15px;">';
+            $html .= nl2br(e($this->emailBody));
+            $html .= '</div>';
+        }
+
+        $html .= '<p style="font-size:12px;color:#666;">Se adjuntan los proyectos seleccionados en formato PDF.</p>';
+
+        $html .= '<hr style="border:none;border-top:1px solid #ddd;margin:20px 0;">';
+        $html .= '<p style="font-size:11px;color:#999;text-align:center;">Sistema de Gesti&oacute;n de Proyectos</p>';
+        $html .= '</body></html>';
+
+        return $html;
     }
 
     protected function proyectosQuery()

@@ -39,13 +39,12 @@
                     <td><input type="text" wire:model="emailSubject" style="width: 95%; padding: 4px;" placeholder="Asunto del correo"></td>
                 </tr>
                 <tr>
-                    <td valign="top"><b>Mensaje:</b><span style="color:red;">*</span></td>
-                    <td><textarea wire:model="emailBody" rows="4" style="width: 95%; padding: 4px;" placeholder="Cuerpo del mensaje..."></textarea></td>
+                    <td valign="top"><b>Comentarios:</b></td>
+                    <td><textarea wire:model="emailBody" rows="4" style="width: 95%; padding: 4px;" placeholder="Comentarios opcionales..."></textarea></td>
                 </tr>
             </table>
 
             @error('emailSubject') <div style="color:red;font-size:10px;margin:2px 0;">{{ $message }}</div> @enderror
-            @error('emailBody') <div style="color:red;font-size:10px;margin:2px 0;">{{ $message }}</div> @enderror
             @error('selectedEmails') <div style="color:red;font-size:10px;margin:2px 0;">{{ $message }}</div> @enderror
 
             <div style="margin-top: 15px;">

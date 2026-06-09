@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Models\Organizacion;
 use App\Models\Departamento;
+use App\Models\OrgContacto;
 use App\Services\UserRoleService;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
@@ -21,8 +22,6 @@ class OrganizacionManager extends Component
     public string $org_rif       = '';
     public string $org_correo    = '';
     public string $org_direccion = '';
-    public string $org_cargo     = '';
-
     public string $org_nombre_contacto   = '';
     public string $org_apellido_contacto = '';
     public string $org_numero_contacto   = '';
@@ -40,9 +39,10 @@ class OrganizacionManager extends Component
 
     // ── Departamentos en Formulario Organización ──────────────
     public array $departamentosForm = [];
+    public array $contactos = [];
+    public array $contactosDep = [];
     public bool $mostrarModalDeps = false;
     public string $nuevo_dep_nombre = '';
-    public string $nuevo_dep_cargo  = '';
     public string $nuevo_dep_nombre_contacto   = '';
     public string $nuevo_dep_apellido_contacto = '';
     public string $nuevo_dep_numero_contacto   = '';
@@ -94,7 +94,6 @@ class OrganizacionManager extends Component
         $this->org_rif               = $org->rif       ?? '';
         $this->org_correo            = $org->correo    ?? '';
         $this->org_direccion         = $org->direccion ?? '';
-        $this->org_cargo             = $org->cargo     ?? '';
         $this->org_nombre_contacto   = $org->nombre_contacto   ?? '';
         $this->org_apellido_contacto = $org->apellido_contacto ?? '';
         $this->org_numero_contacto   = $org->numero_contacto   ?? '';
@@ -108,19 +107,28 @@ class OrganizacionManager extends Component
             foreach ($depCodigos as $dc) {
                 $dep = $departamentos->get($dc);
                 if ($dep) {
+                    $depContact = OrgContacto::where('dep_codigo', $dep->id)->first();
                     $this->departamentosForm[] = [
                         'id'               => $dep->id,
                         'nombre'           => $dep->nombre,
                         'cargo'            => $dep->cargo ?? '',
-                        'nombre_contacto'  => $dep->nombre_contacto   ?? '',
-                        'apellido_contacto'=> $dep->apellido_contacto ?? '',
-                        'numero_contacto'  => $dep->numero_contacto   ?? '',
+                        'nombre_contacto'  => $depContact->oco_nombre ?? '',
+                        'apellido_contacto'=> $depContact->oco_apellido ?? '',
+                        'numero_contacto'  => $depContact->oco_telefono ?? '',
                         'is_new'           => false,
                         'is_deleted'       => false,
                     ];
                 }
             }
         }
+
+        $this->contactos = OrgContacto::where('org_codigo', $org->id)->whereNull('dep_codigo')->get()->map(fn($c) => [
+            'nombre' => $c->oco_nombre ?? '',
+            'apellido' => $c->oco_apellido ?? '',
+            'cargo' => $c->oco_cargo ?? '',
+            'correo' => $c->oco_correo ?? '',
+            'telefono' => $c->oco_telefono ?? '',
+        ])->toArray();
 
         $this->mostrarFormOrg = true;
     }
@@ -134,7 +142,6 @@ class OrganizacionManager extends Component
     {
         $this->mostrarModalDeps = false;
         $this->nuevo_dep_nombre = '';
-        $this->nuevo_dep_cargo  = '';
         $this->nuevo_dep_nombre_contacto   = '';
         $this->nuevo_dep_apellido_contacto = '';
         $this->nuevo_dep_numero_contacto   = '';
@@ -144,7 +151,6 @@ class OrganizacionManager extends Component
     {
         $this->validate([
             'nuevo_dep_nombre' => 'required|min:2|max:255',
-            'nuevo_dep_cargo'  => 'nullable|max:255',
             'nuevo_dep_nombre_contacto'   => 'nullable|max:255',
             'nuevo_dep_apellido_contacto' => 'nullable|max:255',
             'nuevo_dep_numero_contacto'   => 'nullable|max:20',
@@ -164,7 +170,7 @@ class OrganizacionManager extends Component
         $this->departamentosForm[] = [
             'id'               => null,
             'nombre'           => $nombreNuevo,
-            'cargo'            => $this->nuevo_dep_cargo ? trim($this->nuevo_dep_cargo) : '',
+            'cargo'            => '',
             'nombre_contacto'  => $this->nuevo_dep_nombre_contacto ? trim($this->nuevo_dep_nombre_contacto) : '',
             'apellido_contacto'=> $this->nuevo_dep_apellido_contacto ? trim($this->nuevo_dep_apellido_contacto) : '',
             'numero_contacto'  => $this->nuevo_dep_numero_contacto ? trim($this->nuevo_dep_numero_contacto) : '',
@@ -173,10 +179,35 @@ class OrganizacionManager extends Component
         ];
 
         $this->nuevo_dep_nombre = '';
-        $this->nuevo_dep_cargo = '';
         $this->nuevo_dep_nombre_contacto = '';
         $this->nuevo_dep_apellido_contacto = '';
         $this->nuevo_dep_numero_contacto = '';
+    }
+
+    public function agregarContacto(): void
+    {
+        $this->contactos[] = ['nombre' => '', 'apellido' => '', 'cargo' => '', 'correo' => '', 'telefono' => ''];
+    }
+
+    public function quitarContacto(int $index): void
+    {
+        if (isset($this->contactos[$index])) {
+            unset($this->contactos[$index]);
+            $this->contactos = array_values($this->contactos);
+        }
+    }
+
+    public function agregarContactoDep(): void
+    {
+        $this->contactosDep[] = ['nombre' => '', 'apellido' => '', 'correo' => '', 'telefono' => ''];
+    }
+
+    public function quitarContactoDep(int $index): void
+    {
+        if (isset($this->contactosDep[$index])) {
+            unset($this->contactosDep[$index]);
+            $this->contactosDep = array_values($this->contactosDep);
+        }
     }
 
     public function removerDepartamentoFila(int $index): void
@@ -202,7 +233,6 @@ class OrganizacionManager extends Component
             'org_rif'              => 'nullable|max:20',
             'org_correo'           => 'nullable|email|max:255',
             'org_direccion'        => 'nullable|max:1000',
-            'org_cargo'            => 'nullable|max:255',
             'org_nombre_contacto'  => 'nullable|max:255',
             'org_apellido_contacto'=> 'nullable|max:255',
             'org_numero_contacto'  => 'nullable|max:20',
@@ -211,40 +241,47 @@ class OrganizacionManager extends Component
         $nombreNuevo = trim($this->org_nombre);
         $rifNuevo    = $this->org_rif ? trim($this->org_rif) : null;
         $dirNueva    = $this->org_direccion ? trim($this->org_direccion) : null;
-        $cargoNuevo  = $this->org_cargo ? trim($this->org_cargo) : null;
-
         $orgPayload = [
             'nombre'            => $nombreNuevo,
             'rif'               => $this->org_rif ?: '-',
             'correo'            => $this->org_correo ?: '-',
             'direccion'         => $dirNueva,
-            'cargo'             => $cargoNuevo,
         ];
 
         if ($this->org_nombre_key) {
-            $org = Organizacion::where('nombre', $this->org_nombre_key)->first();
-            if ($org) {
-                $org->fill($orgPayload);
-                $org->save();
+            $orgs = Organizacion::where('nombre', $this->org_nombre_key)->get();
+            foreach ($orgs as $orgRow) {
+                $orgRow->fill($orgPayload);
+                $orgRow->save();
             }
+            $org = $orgs->first();
 
             foreach ($this->departamentosForm as $d) {
                 if ($d['is_deleted'] ?? false) {
                     if ($d['id']) {
                         Organizacion::where('dep_codigo', $d['id'])->delete();
-                        Departamento::find($d['id'])->delete();
+                        $dep = Departamento::find($d['id']);
+                        if ($dep) $dep->delete();
                     }
                 } elseif ($d['is_new'] ?? false) {
                     $dep = Departamento::create([
                         'nombre'            => $d['nombre'],
-                        'cargo'             => $d['cargo'] ?: null,
+                        'cargo'             => $d['cargo'] ?? '',
                     ]);
                     Organizacion::create($orgPayload + ['dep_codigo' => $dep->id]);
+                    if ($d['nombre_contacto'] || $d['apellido_contacto'] || $d['numero_contacto']) {
+                        OrgContacto::create([
+                            'dep_codigo' => $dep->id,
+                            'oco_nombre' => $d['nombre_contacto'] ?? '',
+                            'oco_apellido' => $d['apellido_contacto'] ?? '',
+                            'oco_telefono' => $d['numero_contacto'] ?? '',
+                        ]);
+                    }
                 } else {
                     $dep = Departamento::where('id', $d['id'])->first();
                     if ($dep) {
                         $dep->nombre            = $d['nombre'];
-                        $dep->cargo             = $d['cargo'] ?: null;
+                        $dep->cargo             = $d['cargo'] ?? '';
                         $dep->save();
                     }
                 }
@@ -258,6 +295,20 @@ class OrganizacionManager extends Component
                 }
             } else {
                 Organizacion::where('nombre', $nombreNuevo)->whereNull('org_dep_codigo')->delete();
+            }
+
+            if ($org) {
+                OrgContacto::where('org_codigo', $org->id)->whereNull('dep_codigo')->delete();
+                foreach ($this->contactos as $ct) {
+                    OrgContacto::create([
+                        'org_codigo' => $org->id,
+                        'oco_nombre' => $ct['nombre'] ?? '',
+                        'oco_apellido' => $ct['apellido'] ?? '',
+                        'oco_cargo' => $ct['cargo'] ?? '',
+                        'oco_correo' => $ct['correo'] ?? '',
+                        'oco_telefono' => $ct['telefono'] ?? '',
+                    ]);
+                }
             }
 
             $this->notificar('Organización actualizada correctamente.');
@@ -274,17 +325,37 @@ class OrganizacionManager extends Component
                     $hasActiveDeps = true;
                     $dep = Departamento::create([
                         'nombre'            => $d['nombre'],
-                        'cargo'             => $d['cargo'] ?: null,
-                        'nombre_contacto'   => $d['nombre_contacto'] ?? null,
-                        'apellido_contacto' => $d['apellido_contacto'] ?? null,
-                        'numero_contacto'   => $d['numero_contacto'] ?? null,
+                        'cargo'             => $d['cargo'] ?? '',
                     ]);
                     Organizacion::create($orgPayload + ['dep_codigo' => $dep->id]);
+                    if ($d['nombre_contacto'] || $d['apellido_contacto'] || $d['numero_contacto']) {
+                        OrgContacto::create([
+                            'dep_codigo' => $dep->id,
+                            'oco_nombre' => $d['nombre_contacto'] ?? '',
+                            'oco_apellido' => $d['apellido_contacto'] ?? '',
+                            'oco_telefono' => $d['numero_contacto'] ?? '',
+                        ]);
+                    }
                 }
             }
 
             if (!$hasActiveDeps) {
-                Organizacion::create($orgPayload + ['dep_codigo' => null]);
+                $orgRow = Organizacion::create($orgPayload + ['dep_codigo' => null]);
+            } else {
+                $orgRow = Organizacion::where('nombre', $nombreNuevo)->first();
+            }
+
+            if ($orgRow) {
+                foreach ($this->contactos as $ct) {
+                    OrgContacto::create([
+                        'org_codigo' => $orgRow->id,
+                        'oco_nombre' => $ct['nombre'] ?? '',
+                        'oco_apellido' => $ct['apellido'] ?? '',
+                        'oco_cargo' => $ct['cargo'] ?? '',
+                        'oco_correo' => $ct['correo'] ?? '',
+                        'oco_telefono' => $ct['telefono'] ?? '',
+                    ]);
+                }
             }
 
             $this->notificar('Organización registrada correctamente.');
@@ -304,7 +375,8 @@ class OrganizacionManager extends Component
         foreach ($orgRows as $row) {
             if ($row->dep_codigo) {
                 Organizacion::where('dep_codigo', $row->dep_codigo)->delete();
-                Departamento::find($row->dep_codigo)->delete();
+                $dep = Departamento::find($row->dep_codigo);
+                if ($dep) $dep->delete();
             }
         }
 
@@ -330,14 +402,13 @@ class OrganizacionManager extends Component
         $this->org_rif        = '';
         $this->org_correo     = '';
         $this->org_direccion  = '';
-        $this->org_cargo      = '';
         $this->org_nombre_contacto   = '';
         $this->org_apellido_contacto = '';
         $this->org_numero_contacto   = '';
         $this->departamentosForm = [];
+        $this->contactos = [];
         $this->mostrarModalDeps = false;
         $this->nuevo_dep_nombre = '';
-        $this->nuevo_dep_cargo  = '';
         $this->nuevo_dep_nombre_contacto   = '';
         $this->nuevo_dep_apellido_contacto = '';
         $this->nuevo_dep_numero_contacto   = '';
@@ -381,10 +452,16 @@ class OrganizacionManager extends Component
 
         $this->editandoDepId = $id;
         $this->dep_nombre    = $dep->nombre;
-        $this->dep_cargo     = $dep->cargo ?? '';
+        $this->dep_cargo     = $dep->cargo     ?? '';
         $this->dep_nombre_contacto   = $dep->nombre_contacto   ?? '';
         $this->dep_apellido_contacto = $dep->apellido_contacto ?? '';
         $this->dep_numero_contacto   = $dep->numero_contacto   ?? '';
+        $this->contactosDep = OrgContacto::where('dep_codigo', $id)->get()->map(fn($c) => [
+            'nombre' => $c->oco_nombre ?? '',
+            'apellido' => $c->oco_apellido ?? '',
+            'correo' => $c->oco_correo ?? '',
+            'telefono' => $c->oco_telefono ?? '',
+        ])->toArray();
         $this->mostrarFormDep = true;
     }
 
@@ -396,7 +473,7 @@ class OrganizacionManager extends Component
 
         $this->validate([
             'dep_nombre'           => 'required|min:2|max:255',
-            'dep_cargo'            => 'nullable|max:255',
+            'dep_cargo'            => 'nullable|max:2000',
             'dep_nombre_contacto'  => 'nullable|max:255',
             'dep_apellido_contacto'=> 'nullable|max:255',
             'dep_numero_contacto'  => 'nullable|max:20',
@@ -410,7 +487,7 @@ class OrganizacionManager extends Component
 
         $depData = [
             'nombre'            => trim($this->dep_nombre),
-            'cargo'             => $this->dep_cargo ? trim($this->dep_cargo) : null,
+            'cargo'             => $this->dep_cargo ? trim($this->dep_cargo) : '',
         ];
 
         if ($this->editandoDepId) {
@@ -419,6 +496,18 @@ class OrganizacionManager extends Component
                 $dep->fill($depData);
                 $dep->save();
             }
+            if ($dep) {
+                OrgContacto::where('dep_codigo', $dep->id)->delete();
+                foreach ($this->contactosDep as $ct) {
+                    OrgContacto::create([
+                        'dep_codigo' => $dep->id,
+                        'oco_nombre' => $ct['nombre'] ?? '',
+                        'oco_apellido' => $ct['apellido'] ?? '',
+                        'oco_correo' => $ct['correo'] ?? '',
+                        'oco_telefono' => $ct['telefono'] ?? '',
+                    ]);
+                }
+            }
             $this->notificar('Departamento actualizado.');
         } else {
             $dep = Departamento::create($depData);
@@ -426,12 +515,22 @@ class OrganizacionManager extends Component
             Organizacion::create([
                 'nombre'            => $orgRow->nombre,
                 'rif'               => $orgRow->rif,
+                'correo'            => $orgRow->correo,
                 'direccion'         => $orgRow->direccion,
-                'cargo'             => $orgRow->cargo,
                 'dep_codigo'        => $dep->id,
             ]);
 
             Organizacion::where('nombre', $orgRow->nombre)->whereNull('org_dep_codigo')->delete();
+
+            foreach ($this->contactosDep as $ct) {
+                OrgContacto::create([
+                    'dep_codigo' => $dep->id,
+                    'oco_nombre' => $ct['nombre'] ?? '',
+                    'oco_apellido' => $ct['apellido'] ?? '',
+                    'oco_correo' => $ct['correo'] ?? '',
+                    'oco_telefono' => $ct['telefono'] ?? '',
+                ]);
+            }
 
             $this->notificar('Departamento registrado.');
         }
@@ -447,7 +546,8 @@ class OrganizacionManager extends Component
         }
 
         Organizacion::where('dep_codigo', $id)->delete();
-        Departamento::find($id)->delete();
+        $dep = Departamento::find($id);
+        if ($dep) $dep->delete();
 
         if ($this->orgSeleccionadaNombre) {
             $count = Organizacion::where('nombre', $this->orgSeleccionadaNombre)->whereNotNull('org_dep_codigo')->count();
@@ -457,8 +557,8 @@ class OrganizacionManager extends Component
                     Organizacion::create([
                         'nombre'            => $orgRow->nombre,
                         'rif'               => $orgRow->rif,
+                        'correo'            => $orgRow->correo,
                         'direccion'         => $orgRow->direccion,
-                        'cargo'             => $orgRow->cargo,
                         'dep_codigo'        => null,
                     ]);
                 }
@@ -482,6 +582,7 @@ class OrganizacionManager extends Component
         $this->dep_nombre_contacto   = '';
         $this->dep_apellido_contacto = '';
         $this->dep_numero_contacto   = '';
+        $this->contactosDep = [];
         $this->resetValidation();
     }
 

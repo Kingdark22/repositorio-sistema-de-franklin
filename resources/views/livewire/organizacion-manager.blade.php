@@ -90,9 +90,9 @@
                                 <input type="text" wire:model="dep_nombre" style="width: 90%;"> <span class="obligatorio">*</span>
                                 @error('dep_nombre')<br><span style="color:red;font-size:10px;">{{ $message }}</span>@enderror
                             </td>
-                            <td width="15%"><b>Cargo:</b></td>
+                            <td width="15%"><b>Se encarga de:</b></td>
                             <td width="35%">
-                                <input type="text" wire:model="dep_cargo" style="width: 90%;">
+                                <input type="text" wire:model="dep_cargo" style="width: 90%;" placeholder="Descripción opcional">
                                 @error('dep_cargo')<br><span style="color:red;font-size:10px;">{{ $message }}</span>@enderror
                             </td>
                         </tr>
@@ -123,10 +123,6 @@
                                         <div>
                                             <label style="display:block; font-weight:bold; margin-bottom:3px;">Apellido:</label>
                                             <input wire:model="contactosDep.{{ $i }}.apellido" type="text" style="width:100%; padding:6px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;">
-                                        </div>
-                                        <div>
-                                            <label style="display:block; font-weight:bold; margin-bottom:3px;">Cargo:</label>
-                                            <input wire:model="contactosDep.{{ $i }}.cargo" type="text" style="width:100%; padding:6px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;" placeholder="Cargo...">
                                         </div>
                                         <div>
                                             <label style="display:block; font-weight:bold; margin-bottom:3px;">Correo:</label>
@@ -170,7 +166,7 @@
                         <tr style="background-color: {{ $loop->iteration % 2 == 0 ? '#E0E0E0' : '#FFFFFF' }};" valign="top">
                             <td align="center">{{ $loop->iteration }}</td>
                             <td>{{ $dep->nombre }}</td>
-                            <td>{{ $dep->cargo ?? '-' }}</td>
+                            <td>{{ $dep->cargo ?: '-' }}</td>
                             <td>{{ $contactoList ?: '-' }}</td>
                             <td align="center">
                                 <div style="display: inline-flex; align-items: center; gap: 4px;">
@@ -213,14 +209,9 @@
                 </tr>
                 <tr>
                     <td><b>Correo:</b></td>
-                    <td>
-                        <input type="email" wire:model="org_correo" style="width: 90%;">
+                    <td colspan="3">
+                        <input type="email" wire:model="org_correo" style="width: 95%;">
                         @error('org_correo')<br><span style="color:red;font-size:10px;">{{ $message }}</span>@enderror
-                    </td>
-                    <td><b>Cargo:</b></td>
-                    <td>
-                        <input type="text" wire:model="org_cargo" style="width: 90%;">
-                        @error('org_cargo')<br><span style="color:red;font-size:10px;">{{ $message }}</span>@enderror
                     </td>
                 </tr>
                 <tr>
@@ -288,41 +279,84 @@
                     <span style="font-size:14px;">{{ $mostrarModalDeps ? '▲' : '▼' }}</span>
                 </button>
                 @if($mostrarModalDeps)
-                    <div style="padding:10px; border-top:1px solid #ccc;">
-                        <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap; background: #f9f9f9; padding: 8px; border-radius: 4px; margin-bottom: 8px;">
-                            <input type="text" wire:model="nuevo_dep_nombre" placeholder="Nombre depto *" style="width: 180px; padding: 4px; border:1px solid #ccc; border-radius:3px;">
-                            <input type="text" wire:model="nuevo_dep_cargo" placeholder="Cargo" style="width: 150px; padding: 4px; border:1px solid #ccc; border-radius:3px;">
-                            <button type="button" wire:click="agregarDepartamentoFila" class="cm-btn cm-btn-primary cm-btn-sm">+ Añadir</button>
+                    <div style="padding:16px; border-top:1px solid #ccc;">
+                        {{-- Formulario para agregar departamento --}}
+                        <div style="background:#f5f7fa; border:1px solid #dde4eb; border-radius:6px; padding:18px; margin-bottom:14px;">
+                            <div style="font-size:13px; font-weight:bold; color:#2c4a58; margin-bottom:14px; padding-bottom:8px; border-bottom:1px solid #dde4eb;">
+                                Registrar nuevo departamento
+                            </div>
+                            <div style="display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end;">
+                                <div style="flex:1 1 200px; min-width:180px;">
+                                    <label style="display:block; font-size:11px; font-weight:bold; color:#555; margin-bottom:4px;">Departamento <span style="color:red;">*</span></label>
+                                    <input type="text" wire:model="nuevo_dep_nombre" placeholder="Nombre del departamento"
+                                        style="width:100%; padding:8px 10px; border:1px solid #c0c8d0; border-radius:4px; font-size:12px; box-sizing:border-box;">
+                                </div>
+                                <div style="flex:1 1 180px; min-width:160px;">
+                                    <label style="display:block; font-size:11px; font-weight:bold; color:#555; margin-bottom:4px;">Nombre contacto</label>
+                                    <input type="text" wire:model="nuevo_dep_nombre_contacto" placeholder="Nombre"
+                                        style="width:100%; padding:8px 10px; border:1px solid #c0c8d0; border-radius:4px; font-size:12px; box-sizing:border-box;">
+                                </div>
+                                <div style="flex:1 1 180px; min-width:160px;">
+                                    <label style="display:block; font-size:11px; font-weight:bold; color:#555; margin-bottom:4px;">Apellido contacto</label>
+                                    <input type="text" wire:model="nuevo_dep_apellido_contacto" placeholder="Apellido"
+                                        style="width:100%; padding:8px 10px; border:1px solid #c0c8d0; border-radius:4px; font-size:12px; box-sizing:border-box;">
+                                </div>
+                                <div style="flex:1 1 160px; min-width:140px;">
+                                    <label style="display:block; font-size:11px; font-weight:bold; color:#555; margin-bottom:4px;">Teléfono</label>
+                                    <input type="text" wire:model="nuevo_dep_numero_contacto" placeholder="0412-1234567"
+                                        style="width:100%; padding:8px 10px; border:1px solid #c0c8d0; border-radius:4px; font-size:12px; box-sizing:border-box;">
+                                </div>
+                                <div style="flex:0 0 auto;">
+                                    <button type="button" wire:click="agregarDepartamentoFila"
+                                        class="cm-btn cm-btn-primary"
+                                        style="padding:8px 18px; font-size:12px; white-space:nowrap;">+ Añadir departamento</button>
+                                </div>
+                            </div>
+                            @error('nuevo_dep_nombre')<div style="color:red;font-size:11px;margin-top:6px;">{{ $message }}</div>@enderror
                         </div>
-                        @error('nuevo_dep_nombre')<div style="color:red;font-size:10px;margin-bottom:5px;">{{ $message }}</div>@enderror
 
+                        {{-- Lista de departamentos agregados --}}
                         @php
                             $depsVisibles = collect($departamentosForm)->filter(fn($d) => !($d['is_deleted'] ?? false));
                         @endphp
 
+                        <div style="font-size:12px; font-weight:bold; color:#2c4a58; margin-bottom:8px;">
+                            Departamentos agregados ({{ $depsVisibles->count() }})
+                        </div>
+
                         @if($depsVisibles->isEmpty())
-                            <p style="color:#777; font-size:11px; font-style:italic; text-align:center; padding:10px 0;">No se han agregado departamentos.</p>
+                            <div style="background:#fafafa; border:1px dashed #bbb; border-radius:6px; padding:24px; text-align:center; color:#888; font-size:12px; font-style:italic;">
+                                No se han agregado departamentos. Complete el formulario de arriba y presione <strong>+ Añadir departamento</strong>.
+                            </div>
                         @else
-                            <table width="100%" border="1" cellpadding="4" cellspacing="0"
-                                style="border-collapse:collapse; border-color:#bbb; font-size:10px;">
+                            <table width="100%" border="0" cellpadding="0" cellspacing="0"
+                                style="font-size:12px; border-collapse:collapse;">
                                 <thead>
-                                    <tr style="background:#8bb2b7; font-weight:bold;">
-                                        <th align="left" width="5%">N&deg;</th>
-                                        <th align="left">Nombre</th>
-                                        <th align="left">Cargo</th>
-                                        <th align="center" width="60">Acci&oacute;n</th>
+                                    <tr style="background:#6d929b; color:#fff; font-size:11px; text-transform:uppercase; letter-spacing:0.5px;">
+                                        <th align="center" style="padding:10px 8px; width:40px;">N&deg;</th>
+                                        <th align="left" style="padding:10px 8px;">Departamento</th>
+                                        <th align="center" style="padding:10px 8px; width:90px;">Acci&oacute;n</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach($departamentosForm as $index => $d)
                                         @if(!($d['is_deleted'] ?? false))
-                                            <tr style="background-color: {{ $loop->iteration % 2 == 0 ? '#E0E0E0' : '#FFFFFF' }};">
-                                                <td align="center">{{ $loop->iteration }}</td>
-                                                <td>{{ $d['nombre'] }}</td>
-                                                <td>{{ $d['cargo'] ?: '-' }}</td>
-                                                <td align="center">
+                                            <tr style="border-bottom:1px solid #e0e5ea; background-color: {{ $loop->iteration % 2 == 0 ? '#f8f9fa' : '#ffffff' }};">
+                                                <td align="center" style="padding:10px 8px; color:#666;">{{ $loop->iteration }}</td>
+                                                <td style="padding:10px 8px;">
+                                                    <div style="font-weight:bold; color:#333; margin-bottom:2px;">{{ $d['nombre'] }}</div>
+                                                    @if($d['nombre_contacto'] || $d['apellido_contacto'] || $d['numero_contacto'])
+                                                        <div style="font-size:11px; color:#777;">
+                                                            <span style="color:#555;">Contacto:</span>
+                                                            {{ $d['nombre_contacto'] }} {{ $d['apellido_contacto'] }}
+                                                            @if($d['numero_contacto']) &middot; {{ $d['numero_contacto'] }} @endif
+                                                        </div>
+                                                    @endif
+                                                </td>
+                                                <td align="center" style="padding:10px 8px;">
                                                     <button type="button" wire:click="removerDepartamentoFila({{ $index }})"
-                                                        class="cm-btn cm-btn-danger cm-btn-sm" style="font-size:10px;">Remover</button>
+                                                        class="cm-btn cm-btn-danger cm-btn-sm"
+                                                        style="font-size:11px; padding:5px 12px;">Remover</button>
                                                 </td>
                                             </tr>
                                         @endif

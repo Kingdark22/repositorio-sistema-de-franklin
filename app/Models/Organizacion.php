@@ -18,7 +18,6 @@ class Organizacion extends RepositorioModel
         'rif',
         'correo',
         'direccion',
-        'cargo',
         'dep_codigo',
     ];
 

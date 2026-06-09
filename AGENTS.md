@@ -68,6 +68,21 @@
 ### 15. `negocio` role removed
 - **File**: `config/roles.php` — deleted from labels, module_buttons, and aliases.
 
+### 16. Rich HTML email with full project details + all PDF attachments
+- **File**: `app/Livewire/ProyectosPublicadosManager.php`
+- **Fix**: Changed from `Mail::raw()` (plain text) to `Mail::html()` with a full HTML body built by `buildEmailHtml()`.
+- **HTML body includes**: user's custom message, project title, resumen, fecha, comunidad, document list, and optionally comments (controlled by `$includeComments` checkbox).
+- **All PDFs attached**: main project PDF (`archivo_path`) + all component documents (`pry_documentos.*.archivo_path`), each with a sanitized filename.
+- **Property**: `$includeComments` (bool, default `true`).
+- **UI**: Checkbox in email panel: "Incluir comentarios del proyecto en el correo".
+
+### 17. Email comments are user-written (not auto-fetched from DB)
+- **File**: `app/Livewire/ProyectosPublicadosManager.php`
+- **Change**: Removed `$includeComments` property and `ComentarioProyecto` query from `buildEmailHtml()`. The `emailBody` textarea serves as the user's optional comments.
+- **`emailBody` validation**: changed from `required|min:10` to `nullable|max:5000` — comments are optional.
+- **UI**: Label changed from "Mensaje:" to "Comentarios:" with placeholder "Comentarios opcionales...".
+- **Email body**: user's comments shown under "Comentarios:" heading only when non-empty; no auto-fetched DB comments.
+
 ## Key Patterns
 - `MapsLegacyColumns` trait only works on Model instances (after `get()`). The `LegacyColumnBuilder` only overrides `where()` and `orderBy()` — all other QB methods (`whereIn`, `whereNotNull`, `whereNull`, `pluck`, `select`, `groupBy`, `update`, `delete`, etc.) bypass the mapping.
 - **Fix rule**: For `whereIn()`, `whereNotNull()`, `whereNull()` — use the **physical column name** directly.
