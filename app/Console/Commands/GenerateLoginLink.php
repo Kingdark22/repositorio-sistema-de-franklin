@@ -88,7 +88,7 @@ class GenerateLoginLink extends Command
             $mirror->mirrorUserContext($cedula);
             $mirror->mirrorTable('programa');
 
-            $nombre = mb_strtoupper(trim($extUser->per_nombres ?? '') . ' ' . trim($extUser->per_apellidos ?? ''));
+            $nombre = trim($extUser->per_nombres ?? '') . ' ' . trim($extUser->per_apellidos ?? '');
 
             $timestamp = time();
             $firma = hash('sha256', $cedula . $timestamp . config('app.sogac_key', 'RXN0ZUVzVW5TZWNyZXRvRGUzMkJ5dGVzRXhhY3Rvc3M='));
@@ -102,7 +102,11 @@ class GenerateLoginLink extends Command
             ];
 
             $ticket = $this->encryptPayload($payload);
-            $url = 'http://localhost:8000/login?payload=' . urlencode($ticket);
+            $baseUrl = config('app.url');
+            if (empty($baseUrl) || $baseUrl === 'http://localhost') {
+                $baseUrl = 'http://localhost:8000';
+            }
+            $url = rtrim($baseUrl, '/') . '/login?payload=' . urlencode($ticket);
 
             $this->line('');
             $this->info('¡Enlace generado exitosamente!');

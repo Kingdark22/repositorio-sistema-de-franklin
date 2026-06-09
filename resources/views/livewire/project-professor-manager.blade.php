@@ -92,7 +92,7 @@
                     @endphp
                     <tr style="background-color: {{ $loop->iteration % 2 == 0 ? '#E0E0E0' : '#FFFFFF' }};" valign="top">
                         <td style="padding: 5px;">
-                            <b>{{ mb_strtoupper($doc->nombre) }} {{ mb_strtoupper($doc->apellido) }}</b><br>
+                            <b>{{ $doc->nombre }} {{ $doc->apellido }}</b><br>
                             <span style="font-size: 10px;">{{ $cedula }}</span>
                             @if(trim((string) auth()->user()->usu_cedula) === $cedula)
                                 <span style="color: #0000EE; font-size: 10px;"> (Tú)</span>
@@ -135,8 +135,8 @@
                                     <input wire:model="selectedSection.{{ $cedula }}" type="text" placeholder="Sección...">
                                 </div>
                             @else
-                                <span style="font-weight: bold; color: #8b0000;">{{ mb_strtoupper($doc->ppm_anio ?? '-') }}</span><br>
-                                Sec: {{ mb_strtoupper($doc->ppm_seccion ?? '-') }}
+<span style="font-weight: bold; color: #8b0000;">{{ $doc->ppm_anio ?? '-' }}</span><br>
+                                                Sec: {{ $doc->ppm_seccion ?? '-' }}
                             @endif
                         </td>
                         <td align="center" style="padding: 5px;">

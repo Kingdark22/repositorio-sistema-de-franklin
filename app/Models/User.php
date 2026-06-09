@@ -30,7 +30,22 @@ class User extends Authenticatable
 
     public function getConnectionName()
     {
-        return \App\Helpers\DbHelper::connection();
+        return $this->connection ?: \App\Helpers\DbHelper::connection();
+    }
+
+    public function getRememberToken()
+    {
+        return null;
+    }
+
+    public function setRememberToken($value)
+    {
+        // No-op
+    }
+
+    public function getRememberTokenName()
+    {
+        return '';
     }
 
     public function getAuthPassword()

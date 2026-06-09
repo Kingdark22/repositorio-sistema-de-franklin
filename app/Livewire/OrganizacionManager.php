@@ -102,7 +102,7 @@ class OrganizacionManager extends Component
         $this->departamentosForm = [];
         $depCodigos = Organizacion::where('nombre', $nombre)
             ->whereNotNull('org_dep_codigo')
-            ->pluck('dep_codigo');
+            ->pluck('org_dep_codigo');
         if ($depCodigos->isNotEmpty()) {
             $departamentos = Departamento::whereIn('dep_codigo', $depCodigos)->get()->keyBy('dep_codigo');
             foreach ($depCodigos as $dc) {
@@ -153,9 +153,9 @@ class OrganizacionManager extends Component
             'nuevo_dep_nombre.min' => 'El nombre debe tener al menos 2 caracteres.',
         ]);
 
-        $nombreNuevo = strtoupper(trim($this->nuevo_dep_nombre));
+        $nombreNuevo = trim($this->nuevo_dep_nombre);
         foreach ($this->departamentosForm as $d) {
-            if (!($d['is_deleted'] ?? false) && strtoupper($d['nombre']) === $nombreNuevo) {
+            if (!($d['is_deleted'] ?? false) && mb_strtolower($d['nombre']) === mb_strtolower($nombreNuevo)) {
                 $this->addError('nuevo_dep_nombre', 'Este departamento ya está en la lista.');
                 return;
             }
@@ -208,7 +208,7 @@ class OrganizacionManager extends Component
             'org_numero_contacto'  => 'nullable|max:20',
         ]);
 
-        $nombreNuevo = strtoupper(trim($this->org_nombre));
+        $nombreNuevo = trim($this->org_nombre);
         $rifNuevo    = $this->org_rif ? trim($this->org_rif) : null;
         $dirNueva    = $this->org_direccion ? trim($this->org_direccion) : null;
         $cargoNuevo  = $this->org_cargo ? trim($this->org_cargo) : null;
@@ -409,7 +409,7 @@ class OrganizacionManager extends Component
         }
 
         $depData = [
-            'nombre'            => strtoupper(trim($this->dep_nombre)),
+            'nombre'            => trim($this->dep_nombre),
             'cargo'             => $this->dep_cargo ? trim($this->dep_cargo) : null,
         ];
 

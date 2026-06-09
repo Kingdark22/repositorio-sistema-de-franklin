@@ -87,7 +87,7 @@
                         <tr style="background-color: {{ $loop->iteration % 2 == 0 ? '#E0E0E0' : '#FFFFFF' }};"
                             valign="top">
                             <td align="left" style="padding: 5px;">
-                                <span style="font-weight: bold;">{{ mb_strtoupper($p->titulo) }}</span>
+                                <span style="font-weight: bold;">{{ $p->titulo }}</span>
                                 <br>
                                 <span style="font-size: 10px; color: #555;">{{ Str::limit($p->resumen, 60) }}</span>
                                 <br>

@@ -108,7 +108,7 @@
                             valign="top">
                             <td align="center">{{ $loop->iteration }}</td>
                             <td align="center" style="font-weight: bold; padding: 8px;">
-                                {{ mb_strtoupper($item->nombre) }}</td>
+                                {{ $item->nombre }}</td>
                             <td align="center" style="font-weight: bold; font-style: italic; padding: 8px;">
                                 {{ $item->nombre_programa }}
                             </td>

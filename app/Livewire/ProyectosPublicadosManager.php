@@ -81,7 +81,7 @@ class ProyectosPublicadosManager extends Component
 
     public function selectAll(): void
     {
-        $this->selectedProjects = $this->proyectosQuery()->pluck('id')->toArray();
+        $this->selectedProjects = $this->proyectosQuery()->pluck('pry_codigo')->toArray();
     }
 
     public function deselectAll(): void
@@ -190,7 +190,7 @@ class ProyectosPublicadosManager extends Component
             'emailBody.required' => 'El mensaje es obligatorio.',
         ]);
 
-        $proyectos = Proyecto::whereIn('id', $this->selectedProjects)
+        $proyectos = Proyecto::whereIn('pry_codigo', $this->selectedProjects)
             ->where('estado_validacion', 'aprobado')
             ->get();
 
@@ -253,11 +253,14 @@ class ProyectosPublicadosManager extends Component
     {
         $proyectos = $this->proyectosQuery()->get();
 
+        $selectedProyecto = null;
         $comentarios = collect();
         if ($this->selectedPubId) {
-            $proyecto = Proyecto::find($this->selectedPubId);
-            if ($proyecto) {
-                $comentarios = ComentarioProyecto::where('proyecto_id', $proyecto->id)
+            $selectedProyecto = Proyecto::find($this->selectedPubId);
+            if (!$selectedProyecto) {
+                $this->selectedPubId = null;
+            } else {
+                $comentarios = ComentarioProyecto::where('proyecto_id', $selectedProyecto->id)
                     ->orderBy('id', 'desc')
                     ->get();
             }
@@ -271,6 +274,7 @@ class ProyectosPublicadosManager extends Component
 
         return view('livewire.proyectos-publicados-manager', [
             'proyectos' => $proyectos,
+            'selectedProyecto' => $selectedProyecto,
             'comentarios' => $comentarios,
             'comunidades' => $comunidades,
             'organizations' => $organizations,

@@ -23,7 +23,7 @@ class Inscripcion extends Model
 
     public function getConnectionName()
     {
-        return DbHelper::connection();
+        return $this->connection ?: DbHelper::connection();
     }
 
     public function scopeConEstatusActivo(Builder $query): Builder

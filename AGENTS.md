@@ -1,4 +1,4 @@
-# Session Summary — Jun 5, 2026
+# Session Summary — Jun 9, 2026
 
 ## Problems Solved
 
@@ -41,6 +41,33 @@
 - **Status**: ✅ Ran (was `Pending`, now in Batch 3)
 - **Root cause**: Table didn't exist → `tablaDisponible()` returned `false` → form never loaded → register button did nothing.
 
+### 9. `UserRoleService::userHasRole()` — also check available roles
+- **File**: `app/Services/UserRoleService.php`
+- **Fix**: When active session role doesn't match the required role, now also checks user's available detected roles before returning false. E.g., admin user with `gestionador` in available roles can access `role:gestionador` routes.
+
+### 10. `DbHelper` timeout — fsockopen probe before PDO
+- **File**: `app/Helpers/DbHelper.php`
+- **Fix**: CACHE_TTL reduced 86400→60; checks `intranetAlcanzable()` (fsockopen 300ms) first; `SET statement_timeout` failure is non-fatal.
+
+### 11. Classification fields removed from Proyecto payload/DB
+- **File**: `app/Services/ProyectoGestionService.php` — removed `lin_codigo`, `mei_codigo`, `tpu_codigo`, `tin_codigo` from `guardar()` payload, `datosVistaFormulario()`, and `reglasValidacion()`.
+- **Migration**: `2026_06_08_091237_make_classification_fields_nullable.php` — made those 4 columns nullable (executed).
+
+### 12. `GrupoProyectoService::decodificarContexto()` — ArrayObject detection
+- **File**: `app/Services/GrupoProyectoService.php`
+- **Fix**: Added `ArrayObject`/`AsArrayObject` detection before `is_string()` check — model cast was wrapping JSON so `is_string()` always returned false.
+
+### 13. Document serving — dedicated route vs `Storage::url()`
+- **File**: `routes/web.php` — added `/documentos/{path}` route with `auth` middleware
+- **File**: `resources/views/livewire/proyectos-publicados-manager.blade.php` — all document links use `route('documentos.serve')` instead of `Storage::url()` (which broke due to APP_URL misconfiguration in XAMPP subdirectory).
+
+### 14. Publicaciones detail view — independent project loading
+- **File**: `app/Livewire/ProyectosPublicadosManager.php` — `render()` now loads `$selectedProyecto` via `Proyecto::find()` (independent of filtered `$proyectos` collection), preventing blank detail when search/filter changes.
+- **File**: `resources/views/livewire/proyectos-publicados-manager.blade.php` — uses `$selectedProyecto` instead of `$proyectos->firstWhere()`.
+
+### 15. `negocio` role removed
+- **File**: `config/roles.php` — deleted from labels, module_buttons, and aliases.
+
 ## Key Patterns
 - `MapsLegacyColumns` trait only works on Model instances (after `get()`). The `LegacyColumnBuilder` only overrides `where()` and `orderBy()` — all other QB methods (`whereIn`, `whereNotNull`, `whereNull`, `pluck`, `select`, `groupBy`, `update`, `delete`, etc.) bypass the mapping.
 - **Fix rule**: For `whereIn()`, `whereNotNull()`, `whereNull()` — use the **physical column name** directly.
@@ -50,3 +77,8 @@
 - Academic data (trayecto, programa, seccion, encargado) comes from intranet PostgreSQL — not stored in MySQL repositorio.
 - `comunidad_contactos.ccon_cargo` is a varchar — custom cargos stored directly, no separate cargos table.
 - `create_grupo_proyecto_modulo_table` migration must be run before users can register project teams.
+- Document links must use dedicated route (`/documentos/{path}`), not `Storage::url()`, when APP_URL lacks subdirectory path.
+- For detail views in filtered lists, load the selected item via Model::find() (independent of the list query) to prevent disappearing when search/filter changes.
+- `AsArrayObject` model casts require `instanceof ArrayObject` check before `json_decode` in service code.
+- DbHelper: fsockopen (300ms) before PDO (2s) for intranet reachability — `SET statement_timeout` failure is non-fatal.
+- `userHasRole()` should check both active session role AND available detected roles.

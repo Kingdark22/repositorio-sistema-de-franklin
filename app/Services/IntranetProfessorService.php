@@ -724,7 +724,7 @@ class IntranetProfessorService
             foreach ($patrones as $patron) {
                 $patron = trim((string) $patron);
                 if ($patron !== '') {
-                    $q->orWhereRaw('UPPER(TRIM('.$colNombre.')) LIKE ?', ['%'.mb_strtoupper($patron).'%']);
+                    $q->orWhereRaw('UPPER(TRIM('.$colNombre.')) LIKE ?', ['%'.$patron.'%']);
                 }
             }
         });

@@ -101,7 +101,7 @@
                             <tr style="background-color: {{ $loop->iteration % 2 == 0 ? '#E0E0E0' : '#FFFFFF' }};"
                                 valign="top">
                                 <td style="padding: 5px;">
-                                    <span style="font-weight: bold;">{{ mb_strtoupper($p->titulo) }}</span><br>
+                                    <span style="font-weight: bold;">{{ $p->titulo }}</span><br>
                                     <span
                                         style="font-size: 10px; color: #555;">{{ Str::limit($p->resumen, 60) }}</span><br>
                                     <span style="font-size: 9px; color: #888;">Registrado:
@@ -116,7 +116,7 @@
                                         @foreach ($p->documentos as $doc)
                                             <a href="{{ Storage::url(data_get($doc, 'archivo_path')) }}"
                                                 target="_blank"
-                                                style="color: #0000EE; font-size: 10px; display:block;">[{{ mb_strtoupper(data_get($doc, 'componente.nombre', data_get($doc, 'componente_nombre', 'DOC'))) }}]</a>
+                                                style="color: #0000EE; font-size: 10px; display:block;">[{{ data_get($doc, 'componente.nombre', data_get($doc, 'componente_nombre', 'DOC')) }}]</a>
                                         @endforeach
                                     @elseif($p->archivo_path)
                                         <a href="{{ Storage::url($p->archivo_path) }}" target="_blank"
@@ -208,7 +208,7 @@
                                             @foreach ($p->documentos as $doc)
                                                 <a href="{{ Storage::url(data_get($doc, 'archivo_path')) }}"
                                                     target="_blank"
-                                                    style="color: #0000EE; font-size: 10px; display:block;">[{{ mb_strtoupper(data_get($doc, 'componente.nombre', data_get($doc, 'componente_nombre', 'DOC'))) }}]</a>
+                                                    style="color: #0000EE; font-size: 10px; display:block;">[{{ data_get($doc, 'componente.nombre', data_get($doc, 'componente_nombre', 'DOC')) }}]</a>
                                             @endforeach
                                         </div>
                                     @endif
@@ -404,7 +404,7 @@
                         @if (($usaComponentes ?? false) && isset($componentes_requeridos) && count($componentes_requeridos) > 0)
                             @foreach ($componentes_requeridos as $comp)
                                 <tr>
-                                    <td width="25%" valign="middle"><b>{{ mb_strtoupper($comp->nombre) }}</b>
+                                    <td width="25%" valign="middle"><b>{{ $comp->nombre }}</b>
                                         @if ($comp->es_obligatorio)
                                             <span class="obligatorio">*</span>
                                         @endif
@@ -524,7 +524,7 @@
                                 <b>Comunidad:</b>
                                 @if (($esGrupoRegistrado ?? false) && $comunidadNombreGrupo)
                                     <div style="padding: 6px 0; font-size: 12px;">
-                                        <span style="background:#d4edda; border:1px solid #c3e6cb; padding: 4px 10px; border-radius:3px; font-weight:bold;">{{ mb_strtoupper($comunidadNombreGrupo) }}</span>
+                                        <span style="background:#d4edda; border:1px solid #c3e6cb; padding: 4px 10px; border-radius:3px; font-weight:bold;">{{ $comunidadNombreGrupo }}</span>
                                         <small style="color:#777; display:block; margin-top:3px;">Asignada automáticamente por el grupo de proyecto.</small>
                                     </div>
                                 @elseif ($equipo_seccion_clave && ($esGrupoRegistrado ?? false))

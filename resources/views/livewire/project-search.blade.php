@@ -201,7 +201,7 @@
                             </div>
                             @if ($p->comunidad)
                                 <div style="font-size: 10px;"><b>Comunidad:</b>
-                                    {{ mb_strtoupper($p->comunidad->nombre) }}</div>
+                                    {{ $p->comunidad->nombre }}</div>
                             @endif
                             @if ($p->linea_investigacion)
                                 <div style="font-size: 9px; color: #666;">

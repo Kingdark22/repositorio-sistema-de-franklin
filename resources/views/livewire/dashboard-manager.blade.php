@@ -4,7 +4,7 @@
             $hour = date('H');
             $greeting = $hour < 12 ? 'Buenos días' : ($hour < 18 ? 'Buenas tardes' : 'Buenas noches');
         @endphp
-        {{ $greeting }}: {{ strtoupper(auth()->user()->nombre) }} {{ strtoupper(auth()->user()->apellido) }}
+        {{ $greeting }}: {{ auth()->user()->nombre }} {{ auth()->user()->apellido }}
     </h2>
 
     <fieldset style="border: 2px solid #8b0000; border-radius: 6px; font-family: Arial, Helvetica, sans-serif; background-color: transparent; margin: 0; padding: 20px; width: 100%; box-sizing: border-box;">

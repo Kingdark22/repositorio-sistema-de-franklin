@@ -49,7 +49,7 @@
                 @foreach($proyectos as $p)
                     <tr style="background-color: {{ $loop->iteration % 2 == 0 ? '#E0E0E0' : '#FFFFFF' }};" valign="top">
                         <td style="padding: 10px;">
-                            <span style="font-weight: bold; font-size: 12px; color: #000;">{{ mb_strtoupper($p->titulo) }}</span>
+                            <span style="font-weight: bold; font-size: 12px; color: #000;">{{ $p->titulo }}</span>
                             <br><br>
                             <span style="font-size: 10px; font-weight: bold; color: #333;">Autores: {{ $p->autores ?? 'N/A' }}</span>
                             @if($p->tutor)

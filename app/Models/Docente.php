@@ -24,7 +24,7 @@ class Docente extends Model
 
     public function getConnectionName()
     {
-        return DbHelper::connection();
+        return $this->connection ?: DbHelper::connection();
     }
 
     public function scopeConCedulaValida(Builder $query): Builder
@@ -115,7 +115,7 @@ class Docente extends Model
             foreach ($patrones as $patron) {
                 $patron = trim((string) $patron);
                 if ($patron !== '') {
-                    $q->orWhereRaw('UPPER(TRIM(ucu.ucu_nombre)) LIKE ?', ['%'.mb_strtoupper($patron).'%']);
+                    $q->orWhereRaw('UPPER(TRIM(ucu.ucu_nombre)) LIKE ?', ['%'.$patron.'%']);
                 }
             }
         });

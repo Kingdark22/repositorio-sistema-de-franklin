@@ -84,7 +84,7 @@ class Login extends Component
 
             request()->session()->regenerate();
 
-            Auth::login($user, true);
+            Auth::login($user);
 
             try {
                 app(IntranetSimulationMirrorService::class)->mirrorUserContext($cedula);

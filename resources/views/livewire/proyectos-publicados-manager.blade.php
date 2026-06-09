@@ -63,7 +63,7 @@
                     @foreach($organizations as $org)
                         <div style="border-bottom: 1px solid #eee; padding: 6px 0;">
                             <div style="font-weight: bold; font-size: 13px; color: #333; margin-bottom: 4px;">
-                                {{ mb_strtoupper($org->nombre) }}
+                                {{ $org->nombre }}
                                 @if($org->rif)
                                     <span style="font-weight:normal; color:#888; font-size:11px;">({{ $org->rif }})</span>
                                 @endif
@@ -111,10 +111,8 @@
             </div>
         </fieldset>
     @elseif($selectedPubId)
-        @php
-            $proyecto = $proyectos->firstWhere('id', $selectedPubId);
-        @endphp
-        @if($proyecto)
+        @if($selectedProyecto)
+            @php $proyecto = $selectedProyecto; @endphp
             <fieldset style="border: 2px solid #8b0000; border-radius: 6px; padding: 10px;">
                 <legend style="color: #000; font-weight: bold; font-style: italic; padding: 0 5px;">
                     {{ $proyecto->titulo ?? 'Proyecto no disponible' }}

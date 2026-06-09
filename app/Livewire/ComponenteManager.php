@@ -116,7 +116,7 @@ class ComponenteManager extends Component
         $this->validate();
 
         // Validate unique names within the submission (case-insensitive)
-        $nombres = array_map(fn($r) => strtoupper(trim($r['nombre'])), $this->rows);
+        $nombres = array_map(fn($r) => mb_strtolower(trim($r['nombre'])), $this->rows);
         if (count($nombres) !== count(array_unique($nombres))) {
             $this->addError('rows', 'No puede haber nombres de componentes duplicados.');
             return;
@@ -125,7 +125,7 @@ class ComponenteManager extends Component
         // Validate unique names against existing DB records per program
         foreach ($this->rows as $row) {
             $query = Componente::where('programa_id', $this->programa_id)
-                ->whereRaw('UPPER(TRIM(comp_nombre)) = ?', [strtoupper(trim($row['nombre']))]);
+                ->whereRaw('TRIM(comp_nombre) = ?', [trim($row['nombre'])]);
             if (!empty($row['id'])) {
                 $query->where('id', '!=', $row['id']);
             }
